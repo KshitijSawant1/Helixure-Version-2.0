@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Three.js Tilted Cube</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- ✅ Load Three.js -->
+    <script src="https://unpkg.com/three@0.148.0/build/three.min.js"></script>
+
+    <script>
+      // Scene setup
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("#0dc18");
+
+      // Cube setup
+      const geometry = new THREE.BoxGeometry(20, 20, 20);
+
+      geometry.center();
+      const material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
+      const cubeMesh = new THREE.Mesh(geometry, material);
+      scene.add(cubeMesh);
+
+      // Camera
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(0, 0, 50);
+      camera.lookAt(0, 0, 0);
+
+      // Renderer
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      document.getElementById("app").appendChild(renderer.domElement);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      // Mouse control
+      let defaultSpin = 0.01;
+      let velocitySpin = defaultSpin;
+
+      let isDragging = false;
+      let previousMouseX = 0;
+
+      document.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        previousMouseX = e.clientX;
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        velocitySpin = defaultSpin;
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          const deltaX = e.clientX - previousMouseX;
+          velocitySpin = defaultSpin + deltaX * 0.001;
+          previousMouseX = e.clientX;
+        }
+      });
+
+      // Tilted rotation axis
+      const tiltAxis = new THREE.Vector3(1, 1, 0).normalize();
+
+      // Render loop
+      const render = () => {
+        requestAnimationFrame(render);
+        cubeMesh.rotateOnAxis(tiltAxis, velocitySpin);
+        renderer.render(scene, camera);
+      };
+
+      render();
+    </script>
+  </body>
+</html>

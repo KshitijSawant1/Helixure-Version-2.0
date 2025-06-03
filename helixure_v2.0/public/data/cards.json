@@ -1,0 +1,11 @@
+[
+    {
+      "title": "AI for Web Scraping & Summarization",
+      "type": "Shared",
+      "to": "/web-scrap",
+      "image": "testimage.png",
+      "description": "AI automates web data extraction...",
+      "colors": ["from-blue-500", "to-pink-500"]
+    }
+  ]
+  

@@ -1,0 +1,170 @@
+import React, { useState } from "react";
+
+const colorMap = {
+  gray: ["from-gray-500", "to-gray-400", "bg-gray-500"],
+  blue: ["from-blue-500", "to-blue-400", "bg-blue-500"],
+  green: ["from-green-500", "to-green-400", "bg-green-500"],
+  red: ["from-red-500", "to-red-400", "bg-red-500"],
+  purple: ["from-purple-500", "to-purple-400", "bg-purple-500"],
+  indigo: ["from-indigo-500", "to-indigo-400", "bg-indigo-500"],
+  yellow: ["from-yellow-400", "to-yellow-300", "bg-yellow-400"],
+  teal: ["from-teal-500", "to-teal-400", "bg-teal-500"],
+};
+
+const colors = Object.keys(colorMap);
+
+const NewSpaceModal = ({ isOpen, onClose, onSubmit }) => {
+  const [spaceName, setSpaceName] = useState("");
+  const [description, setDescription] = useState("");
+  const [spaceType, setSpaceType] = useState("Shared");
+  const [selectedColors, setSelectedColors] = useState([]);
+
+  const toggleColor = (color) => {
+    setSelectedColors((prev) =>
+      prev.includes(color)
+        ? prev.filter((c) => c !== color)
+        : prev.length < 2
+        ? [...prev, color]
+        : prev
+    );
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (selectedColors.length === 0) {
+      alert("Please select at least one color.");
+      return;
+    }
+
+    // Always ensure two colors for gradient
+    let chosen = [...selectedColors];
+    if (chosen.length === 1) {
+      const other = colors.find((c) => c !== chosen[0]);
+      chosen.push(other);
+    }
+
+    const finalColors = [
+      colorMap[chosen[0]][0], // from-*
+      colorMap[chosen[1]][1], // to-*
+    ];
+
+    const newSpace = {
+      spaceName,
+      description,
+      spaceType,
+      colors: finalColors,
+    };
+
+    onSubmit(newSpace);
+    onClose();
+
+    setSpaceName("");
+    setDescription("");
+    setSpaceType("Shared");
+    setSelectedColors([]);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-center items-center backdrop-blur-sm bg-black/30">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg shadow-lg p-6 relative">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Create New Space
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-900"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
+              Space Name
+            </label>
+            <input
+              type="text"
+              required
+              value={spaceName}
+              onChange={(e) => setSpaceName(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500"
+              placeholder="Enter space name"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
+              Description
+            </label>
+            <textarea
+              rows="3"
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500"
+              placeholder="Write a short description..."
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 dark:text-white">
+              Type:
+            </span>
+            {["Private", "Shared"].map((type) => (
+              <label key={type} className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="spaceType"
+                  value={type}
+                  checked={spaceType === type}
+                  onChange={(e) => setSpaceType(e.target.value)}
+                  className="accent-blue-600"
+                />
+                <span className="text-sm text-gray-700 dark:text-white">
+                  {type}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
+              Choose 2 Colors
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => toggleColor(color)}
+                  className={`w-6 h-6 rounded-full border-2 ${
+                    selectedColors.includes(color)
+                      ? "ring-2 ring-offset-2 ring-gray-800"
+                      : "border-gray-300"
+                  } ${colorMap[color][2]}`}
+                  title={color}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg text-sm font-medium"
+            >
+              Create Space
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default NewSpaceModal;
