@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 
 const colorMap = {
-  gray: ["from-gray-500", "to-gray-400", "bg-gray-500"],
-  blue: ["from-blue-500", "to-blue-400", "bg-blue-500"],
-  green: ["from-green-500", "to-green-400", "bg-green-500"],
-  red: ["from-red-500", "to-red-400", "bg-red-500"],
-  purple: ["from-purple-500", "to-purple-400", "bg-purple-500"],
-  indigo: ["from-indigo-500", "to-indigo-400", "bg-indigo-500"],
-  yellow: ["from-yellow-400", "to-yellow-300", "bg-yellow-400"],
-  teal: ["from-teal-500", "to-teal-400", "bg-teal-500"],
+  gray: ["from-gray-700", "to-gray-700", "bg-gray-700"],
+  lblue: ["from-blue-400", "to-blue-400", "bg-blue-400"],
+  lgreen: ["from-green-400", "to-green-400", "bg-green-400"],
+  pink: ["from-pink-500", "to-pink-500", "bg-pink-500"],
+  red: ["from-red-500", "to-red-500", "bg-red-500"],
+  yellow: ["from-yellow-400", "to-yellow-400", "bg-yellow-400"],
+  orange: ["from-orange-400", "to-orange-400", "bg-orange-400"],
+  purple: ["from-purple-500", "to-purple-500", "bg-purple-500"],
+  indigo: ["from-indigo-500", "to-indigo-500", "bg-indigo-500"],
+  teal: ["from-teal-500", "to-teal-500", "bg-teal-500"],
 };
 
 const colors = Object.keys(colorMap);

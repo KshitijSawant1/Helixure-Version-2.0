@@ -1,9 +1,35 @@
-import bgImage from "/Users/kshitijksawant/Programs/Helixure Version 2.0/helixure_v2.0/src/assets/images/Signin-up-side-BG.png";
+import bgImage from "../assets/images/ssuibg.png";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import React, { useContext } from "react";
-
+import React, { useContext, useState } from "react";
+import { useUserAuth } from "../context/AuthContext";
 const Signin = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState("");
+  const { session, signInUser } = useUserAuth();
+  console.log(session);
+  const navigate = useNavigate();
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const result = await signInUser(email.trim(), password.trim());
+
+      if (result.success) {
+        navigate("/profile");
+      } else {
+        setError(result.error || "Sign-in failed.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex w-full h-screen">
       {/* Left: Form Section */}
@@ -24,11 +50,11 @@ const Signin = () => {
             </p>
           </div>
 
-          <form className="flex flex-col gap-4">
+          <form onSubmit={handleSignIn} className="flex flex-col gap-4">
             {/* Username Input */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
-                Username
+                Email
               </label>
               <div className="flex items-center border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
                 <span className="px-3 text-gray-500 dark:text-gray-300">
@@ -49,8 +75,11 @@ const Signin = () => {
                   </svg>
                 </span>
                 <input
-                  type="text"
-                  placeholder="Username"
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  id="email"
+                  placeholder="john.doe@company.com"
+                  required
                   className="w-full p-3 text-sm border-l border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
@@ -80,8 +109,10 @@ const Signin = () => {
                   </svg>
                 </span>
                 <input
+                  onChange={(e) => setPassword(e.target.value)}
                   type="password"
-                  placeholder="Password"
+                  placeholder="•••••••••"
+                  required
                   className="w-full p-3 text-sm border-l border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
@@ -109,7 +140,7 @@ const Signin = () => {
               type="submit"
               className="w-full py-2.5 mt-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 

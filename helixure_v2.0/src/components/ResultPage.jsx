@@ -1,11 +1,11 @@
-import React from 'react'
+import React from "react";
+
+import { useNavigate } from "react-router-dom";
 
 const ResultPage = () => {
-  return (
-    <div>
-      you have succesufully compted the process
-    </div>
-  )
-}
+  const navigate = useNavigate();
 
-export default ResultPage
+  return <>reached result</>;
+};
+
+export default ResultPage;

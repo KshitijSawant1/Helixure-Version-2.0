@@ -1,9 +1,53 @@
-import bgImage from "/Users/kshitijksawant/Programs/Helixure Version 2.0/helixure_v2.0/src/assets/images/Signin-up-side-BG.png";
-import { Link } from "react-router-dom";
-import React, { useContext } from "react";
+import bgImage from "../assets/images/ssuibg.png";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import React, { useContext, useState } from "react";
+import { useUserAuth } from "../context/AuthContext";
 
 const Signup = () => {
-  
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [dob, setDob] = useState("");
+  const [phone, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confrimpassword, setConfrimPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState("");
+  const { session, signUpNewUser } = useUserAuth();
+  console.log(session);
+  const navigate = useNavigate();
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (password !== confrimpassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const result = await signUpNewUser(
+        firstname,
+        lastname,
+        dob,
+        phone,
+        email,
+        password
+      );
+
+      if (result.success) {
+        navigate("/profile");
+      } else {
+        setError(result.error.message || "Signup failed.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex w-full h-screen">
       {/* Left: Form Section */}
@@ -37,7 +81,7 @@ const Signup = () => {
             </p>
           </div>
 
-          <form>
+          <form onSubmit={handleSignUp}>
             <div className="grid gap-6 mb-6 md:grid-cols-2">
               <div>
                 <label
@@ -47,6 +91,7 @@ const Signup = () => {
                   First name
                 </label>
                 <input
+                  onChange={(e) => setFirstname(e.target.value)}
                   type="text"
                   id="first_name"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -62,6 +107,7 @@ const Signup = () => {
                   Last name
                 </label>
                 <input
+                  onChange={(e) => setLastname(e.target.value)}
                   type="text"
                   id="last_name"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -74,9 +120,10 @@ const Signup = () => {
                   htmlFor="birthday"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
-                  Birthday
+                  Date of Birth
                 </label>
                 <input
+                  onChange={(e) => setDob(e.target.value)}
                   type="date"
                   id="birthday"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
@@ -95,11 +142,13 @@ const Signup = () => {
                   Phone number
                 </label>
                 <input
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   type="tel"
                   id="phone"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="123-45-678"
-                  pattern="[0-9]{3}-[0-9]{2}-[0-9]{3}"
+                  placeholder="123456789"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
                   required
                 />
               </div>
@@ -112,6 +161,7 @@ const Signup = () => {
                 Email address
               </label>
               <input
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 id="email"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -127,6 +177,7 @@ const Signup = () => {
                 Password
               </label>
               <input
+                onChange={(e) => setPassword(e.target.value)}
                 type="password"
                 id="password"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -142,6 +193,7 @@ const Signup = () => {
                 Confirm password
               </label>
               <input
+                onChange={(e) => setConfrimPassword(e.target.value)}
                 type="password"
                 id="confirm_password"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -175,10 +227,12 @@ const Signup = () => {
             </div>
             <button
               type="submit"
+              disabled={loading}
               className="w-full py-2.5 mt-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
             >
               Sign Up
             </button>
+            {error && <p className="text-center pt-4 text-red-600">{error}</p>}
           </form>
 
           <div className="my-6 border-t border-gray-300 dark:border-gray-600" />
