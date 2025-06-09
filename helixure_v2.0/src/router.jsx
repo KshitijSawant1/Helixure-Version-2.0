@@ -8,6 +8,7 @@ import ResultPage from "./components/ResultPage";
 import Profile from "./components/Profile";
 import Playground from "./components/Playground";
 import Navbar from "./components/Navbar"; // optional
+import Whiteboard from "./components/whiteboard/Whiteboard.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "result", element: <ResultPage /> },
       { path: "profile", element: <Profile /> },
       { path: "playground", element: <Playground /> },
+      { path: "whiteboard", element: <Whiteboard /> },
     ],
   },
 ]);

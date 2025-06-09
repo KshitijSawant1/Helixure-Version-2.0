@@ -1,0 +1,58 @@
+@keyframes waveBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    filter: brightness(1.2) hue-rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px);
+    filter: brightness(1.5) hue-rotate(180deg);
+  }
+}
+
+@keyframes waveLinkPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.3);
+  }
+}
+
+.wave-bounce {
+  animation: waveBounce 1.5s ease-in-out infinite;
+}
+
+.animate-wave-link {
+  animation: waveLinkPulse 1.5s ease-in-out infinite;
+}
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+.flair {
+  cursor: pointer;
+  width: 70px;
+  height: 70px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.flair--3b {
+  background-image: url("https://assets.codepen.io/16327/ui-flair-2.png");
+}
+
+.flair--4b {
+  background-image: url("https://assets.codepen.io/16327/ui-flair-4.png");
+}

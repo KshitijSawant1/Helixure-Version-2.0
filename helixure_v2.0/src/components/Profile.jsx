@@ -30,7 +30,7 @@ const Profile = () => {
   const handleSelect = (status) => {
     setSelected(status);
     setFormState((prev) => ({ ...prev, status }));
-    updateSingleField("status", status); // ✅ auto-save to Supabase
+    updateSingleField("status", status); 
     setIsOpen(false);
   };
 
@@ -153,7 +153,6 @@ const Profile = () => {
           return;
         }
 
-        // ⚠️ Do not reset alert here. Just set fallback state and exit
         setFormState((prev) => ({
           ...prev,
           firstname: metadata.firstname || "",
@@ -167,7 +166,7 @@ const Profile = () => {
 
         setSelectedimgColor("gray");
 
-        return; // ⛔ stop further execution
+        return; 
       }
 
       // Only run if profile data was found
