@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-
+import { supabase } from "../supabaseClient";
+import { toast } from "react-toastify";
 const colorMap = {
   gray: ["from-gray-700", "to-gray-700", "bg-gray-700"],
   lblue: ["from-blue-400", "to-blue-400", "bg-blue-400"],
@@ -15,7 +16,7 @@ const colorMap = {
 
 const colors = Object.keys(colorMap);
 
-const NewSpaceModal = ({ isOpen, onClose, onSubmit }) => {
+const NewSpaceModal = ({ isOpen, onClose, onCreated }) => {
   const [spaceName, setSpaceName] = useState("");
   const [description, setDescription] = useState("");
   const [spaceType, setSpaceType] = useState("Shared");
@@ -31,7 +32,7 @@ const NewSpaceModal = ({ isOpen, onClose, onSubmit }) => {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (selectedColors.length === 0) {
@@ -39,28 +40,33 @@ const NewSpaceModal = ({ isOpen, onClose, onSubmit }) => {
       return;
     }
 
-    // Always ensure two colors for gradient
     let chosen = [...selectedColors];
     if (chosen.length === 1) {
       const other = colors.find((c) => c !== chosen[0]);
       chosen.push(other);
     }
 
-    const finalColors = [
-      colorMap[chosen[0]][0], // from-*
-      colorMap[chosen[1]][1], // to-*
-    ];
+    const finalColors = [colorMap[chosen[0]][0], colorMap[chosen[1]][1]];
 
-    const newSpace = {
-      spaceName,
-      description,
-      spaceType,
-      colors: finalColors,
-    };
+    const { data, error } = await supabase.from("playground").insert([
+      {
+        title: spaceName,
+        description,
+        type: spaceType,
+        color1: finalColors[0],
+        color2: finalColors[1],
+        user_id: (await supabase.auth.getUser()).data.user.id,
+      },
+    ]);
 
-    onSubmit(newSpace);
-    onClose();
+    if (error) {
+      alert("Error creating space: " + error.message);
+      return;
+    }
+    toast.success("Space created successfully!");
+    if (onCreated) onCreated();
 
+    onClose(); // close modal
     setSpaceName("");
     setDescription("");
     setSpaceType("Shared");
@@ -106,6 +112,7 @@ const NewSpaceModal = ({ isOpen, onClose, onSubmit }) => {
             <textarea
               rows="3"
               required
+              maxLength={100}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500"

@@ -1,50 +1,56 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaBars, FaTh, FaCheck } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import testimage from "../assets/testimage.png";
 import NewSpaceModal from "./NewSpaceModal";
+import { supabase } from "../supabaseClient";
 
 const Playground = () => {
   const [cards, setCards] = useState([]);
   const [view, setView] = useState("grid");
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const [filter, setFilter] = useState("All");
+  const filteredCards = cards.filter((card) => {
+    if (filter === "All") return true;
+    if (filter === "Private") return card.type === "Private";
+    if (filter === "Shared") return card.type === "Shared";
+  });
 
-  useEffect(() => {
-    const localCards = JSON.parse(localStorage.getItem("myCards") || "[]");
+  const fetchSpaces = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    fetch("/data/cards.json")
-      .then((res) => res.json())
-      .then((data) => {
-        const resolved = data.map((card) => ({
-          ...card,
-          image: testimage,
-        }));
-        setCards([...resolved, ...localCards]); // 🧠 merge both
-      });
-  }, []);
+    const { data, error } = await supabase
+      .from("playground")
+      .select("*")
+      .eq("user_id", user.id);
 
-  const handleCreate = (spaceData) => {
-    const newCard = {
-      title: spaceData.spaceName,
-      description: spaceData.description,
-      type: spaceData.spaceType,
+    if (error) {
+      console.error("Fetch error:", error);
+      return;
+    }
+
+    const resolved = data.map((card) => ({
+      title: card.title,
+      description: card.description,
+      type: card.type,
       to: "#",
       image: testimage,
-      colors: spaceData.colors,
-    };
+      colors: [card.color1, card.color2],
+    }));
 
-    const existing = JSON.parse(localStorage.getItem("myCards") || "[]");
-    const updatedCards = [...existing, newCard];
-    localStorage.setItem("myCards", JSON.stringify(updatedCards));
-
-    setCards((prev) => [...prev, newCard]);
+    setCards(resolved);
   };
+
+  useEffect(() => {
+    fetchSpaces();
+  }, []);
 
   return (
     <>
-      <section className="relative w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-transparent dark:from-gray-900">
+      <section className="relative w-full min-h-screen flex flex-col items-center pt-20  bg-gradient-to-b from-blue-50 to-transparent dark:from-gray-900">
         {/* Title Section */}
 
         <div className="flex flex-col items-center text-center mb-6">
@@ -61,9 +67,10 @@ const Playground = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Filters */}
             <div className="flex flex-wrap gap-2">
-              {["Personal", "Shared", "All"].map((label) => (
+              {["Private", "Shared", "All"].map((label) => (
                 <button
                   key={label}
+                  onClick={() => setFilter(label)}
                   className="border border-gray-300 dark:border-gray-600 px-4 py-1.5 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   {label}
@@ -113,13 +120,15 @@ const Playground = () => {
         </div>
         <NewSpaceModal
           isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          onSubmit={handleCreate}
+          onClose={() => {
+            setShowModal(false);
+            fetchSpaces();
+          }}
         />
 
         {view === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-5 w-full max-w-6xl place-items-center">
-            {cards.map((card, index) => (
+            {filteredCards.map((card, index) => (
               <div
                 key={index}
                 className="max-w-sm w-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700"
@@ -171,12 +180,14 @@ const Playground = () => {
                 </div>
 
                 {/* Content */}
-                <div className="p-5 pt-3">
+                <div className="p-5 pt-3 flex flex-col justify-between min-h-[220px]">
                   <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                     {card.title}
                   </h5>
-                  <p className="mb-4 font-normal text-gray-700 dark:text-gray-400 text-justify">
-                    {card.description || "No description provided."}
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {card.description.length > 100
+                      ? `${card.description.slice(0, 100)}...`
+                      : card.description}
                   </p>
 
                   <div className="flex justify-center sm:justify-start mt-2">
@@ -184,7 +195,7 @@ const Playground = () => {
                       to={card.to}
                       className="w-10 sm:w-auto inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 whitespace-nowrap transition"
                     >
-                      <span className="hidden sm:inline">Read more</span>
+                      <span className="hidden sm:inline">Explore</span>
                       <svg
                         className="w-3.5 h-3.5 ml-0 sm:ml-2"
                         fill="none"
@@ -221,6 +232,11 @@ const Playground = () => {
                   <h5 className="text-lg font-bold text-gray-900 dark:text-white">
                     {card.title}
                   </h5>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {card.description.length > 100
+                      ? `${card.description.slice(0, 100)}...`
+                      : card.description}
+                  </p>
                   <div>
                     <span
                       className={`text-xs font-medium inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm border
@@ -264,7 +280,7 @@ const Playground = () => {
                     to={card.to}
                     className="w-10 sm:w-auto inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 whitespace-nowrap transition"
                   >
-                    <span className="hidden sm:inline">Read more</span>
+                    <span className="hidden sm:inline">Explore</span>
                     <svg
                       className="w-3.5 h-3.5 ml-0 sm:ml-2"
                       fill="none"

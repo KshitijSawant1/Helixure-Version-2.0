@@ -96,6 +96,7 @@ const BlockCard = ({
 
   return (
     <div
+    
       id={`block-${id}`}
       ref={cardRef}
       onMouseDown={startDrag}

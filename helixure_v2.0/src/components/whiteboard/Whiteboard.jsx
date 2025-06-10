@@ -2,10 +2,24 @@ import React, { useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import BlockCard from "./BlockCard";
 import InstructionDrawer from "./InstructionDrawer";
+import CreateBlockDrawer from "./CreateBlockDrawer";
+import SearchBlockModal from "./SearchBlockModal";
 
 const Whiteboard = () => {
   const containerRef = useRef(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState(null);
+  const toggleInstructionDrawer = () => {
+    setActivePanel((prev) => (prev === "instruction" ? null : "instruction"));
+  };
+
+  const toggleCreateDrawer = () => {
+    setActivePanel((prev) => (prev === "create" ? null : "create"));
+  };
+
+  const toggleSearchModal = () => {
+    setActivePanel((prev) => (prev === "search" ? null : "search"));
+  };
+
   const [showGas, setShowGas] = useState(false);
   const handleToggleGas = () => {
     setShowGas((prev) => {
@@ -109,12 +123,12 @@ const Whiteboard = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
   useEffect(() => {
-    if (drawerOpen) {
+    if (activePanel === "instruction") {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
     }
-  }, [drawerOpen]);
+  }, [activePanel]);
 
   return (
     <div
@@ -178,7 +192,7 @@ const Whiteboard = () => {
           <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
             <button
               data-tooltip-target="tooltip-info"
-              onClick={() => setDrawerOpen((prev) => !prev)}
+              onClick={() => toggleInstructionDrawer((prev) => !prev)}
               type="button"
               className="inline-flex flex-col items-center justify-center px-5 rounded-s-full hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
@@ -212,6 +226,7 @@ const Whiteboard = () => {
             <button
               data-tooltip-target="tooltip-search"
               type="button"
+              onClick={() => toggleSearchModal((prev) => !prev)}
               className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
               <svg
@@ -245,6 +260,7 @@ const Whiteboard = () => {
               <button
                 data-tooltip-target="tooltip-new"
                 type="button"
+                onClick={() => toggleCreateDrawer((prev) => !prev)}
                 className="inline-flex items-center justify-center w-10 h-10 font-medium bg-blue-600 rounded-full hover:bg-blue-700 group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800"
               >
                 <svg
@@ -337,8 +353,21 @@ const Whiteboard = () => {
         </div>
       </div>
       <InstructionDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        isOpen={activePanel === "instruction"}
+        onClose={() => setActivePanel(null)}
+      />
+
+      <CreateBlockDrawer
+        isOpen={activePanel === "create"}
+        onClose={() => setActivePanel(null)}
+      />
+
+      <SearchBlockModal
+        isOpen={activePanel === "search"}
+        onClose={() => setActivePanel(null)}
+        onSearch={(query) => {
+          console.log("Searching for:", query);
+        }}
       />
     </div>
   );

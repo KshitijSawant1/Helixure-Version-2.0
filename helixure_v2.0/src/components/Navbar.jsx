@@ -1,19 +1,30 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useUserAuth } from "../context/AuthContext"; // 👈 Add this
 import helixurev2logo from "../assets/logos/hv2.png";
-
-const navLinks = [
-  { label: "signup", path: "/signup" },
-  { label: "signin", path: "/signin" },
-  { label: "playground", path: "/playground" },
-  { label: "Result Page", path: "/result" },
-  { label: "profile", path: "/profile" },
-  { label: "whiteboard", path: "/whiteboard" },
-];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { session, signOut } = useUserAuth(); // 👈 Get user session and signOut
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/signin");
+  };
+
+  const navLinksLoggedOut = [
+    { label: "signup", path: "/signup" },
+    { label: "signin", path: "/signin" },
+    { label: "Result Page", path: "/result" },
+  ];
+
+  const navLinksLoggedIn = [
+    { label: "playground", path: "/playground" },
+    { label: "Result Page", path: "/result" },
+    { label: "profile", path: "/profile" },
+    { label: "whiteboard", path: "/whiteboard" },
+  ];
 
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-900">
@@ -30,10 +41,10 @@ const Navbar = () => {
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
           <button
             type="button"
-            onClick={() => navigate("/card")}
+            onClick={() => navigate("/playground")}
             className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >
-            Proceed to Network
+            Proceed to Playground
           </button>
 
           {/* Hamburger Button */}
@@ -71,16 +82,28 @@ const Navbar = () => {
           id="navbar-cta"
         >
           <ul className="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-            {navLinks.map(({ label, path }) => (
-              <li key={label}>
-                <Link
-                  to={path}
+            {(session?.user ? navLinksLoggedIn : navLinksLoggedOut).map(
+              ({ label, path }) => (
+                <li key={label}>
+                  <Link
+                    to={path}
+                    className="block py-2 px-3 md:p-0 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white dark:hover:bg-gray-700 md:dark:hover:bg-transparent"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              )
+            )}
+            {session?.user && (
+              <li>
+                <button
+                  onClick={handleLogout}
                   className="block py-2 px-3 md:p-0 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white dark:hover:bg-gray-700 md:dark:hover:bg-transparent"
                 >
-                  {label}
-                </Link>
+                  logout
+                </button>
               </li>
-            ))}
+            )}
           </ul>
         </div>
       </div>

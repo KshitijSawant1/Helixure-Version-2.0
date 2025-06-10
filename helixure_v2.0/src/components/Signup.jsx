@@ -2,6 +2,7 @@ import bgImage from "../assets/images/ssuibg.png";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import React, { useContext, useState } from "react";
 import { useUserAuth } from "../context/AuthContext";
+import { useEffect } from "react";
 
 const Signup = () => {
   const [firstname, setFirstname] = useState("");
@@ -47,6 +48,11 @@ const Signup = () => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (session?.user) {
+      navigate("/playground");
+    }
+  }, [session]);
 
   return (
     <div className="flex w-full h-screen">
