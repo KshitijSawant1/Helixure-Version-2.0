@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import BlockCard from "./BlockCard";
+import InstructionDrawer from "./InstructionDrawer";
 
 const Whiteboard = () => {
   const containerRef = useRef(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [showGas, setShowGas] = useState(false);
   const handleToggleGas = () => {
     setShowGas((prev) => {
@@ -106,6 +108,13 @@ const Whiteboard = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [drawerOpen]);
 
   return (
     <div
@@ -169,6 +178,7 @@ const Whiteboard = () => {
           <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
             <button
               data-tooltip-target="tooltip-info"
+              onClick={() => setDrawerOpen((prev) => !prev)}
               type="button"
               className="inline-flex flex-col items-center justify-center px-5 rounded-s-full hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
@@ -195,9 +205,10 @@ const Whiteboard = () => {
               role="tooltip"
               className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700"
             >
-              info
+              Info
               <div className="tooltip-arrow" data-popper-arrow></div>
             </div>
+
             <button
               data-tooltip-target="tooltip-search"
               type="button"
@@ -259,7 +270,7 @@ const Whiteboard = () => {
               role="tooltip"
               className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700"
             >
-              Create new item
+              Create New Block
               <div className="tooltip-arrow" data-popper-arrow></div>
             </div>
             <button
@@ -289,12 +300,13 @@ const Whiteboard = () => {
               role="tooltip"
               className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700"
             >
-              gas
+              Gas
               <div className="tooltip-arrow" data-popper-arrow></div>
             </div>
             <button
               onClick={handleToggleGames}
               type="button"
+              data-tooltip-target="tooltip-games"
               className="inline-flex flex-col items-center justify-center px-5 rounded-e-full hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
               <svg
@@ -314,9 +326,9 @@ const Whiteboard = () => {
               <span className="sr-only">Games</span>
             </button>
             <div
-              id="tooltip-profile"
+              id="tooltip-games"
               role="tooltip"
-              className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700"
+              className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
             >
               Games
               <div className="tooltip-arrow" data-popper-arrow></div>
@@ -324,6 +336,10 @@ const Whiteboard = () => {
           </div>
         </div>
       </div>
+      <InstructionDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
     </div>
   );
 };

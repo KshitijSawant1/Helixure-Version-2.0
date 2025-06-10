@@ -1,11 +1,30 @@
 // src/components/whiteboard/BlockCard.jsx
 import React, { useRef, useEffect, useState } from "react";
 
-const BlockCard = ({ id, x, y, updatePosition, blocks }) => {
+const BlockCard = ({
+  id,
+  x,
+  y,
+  updatePosition,
+  blocks,
+  selectedhuecolor = "blue-400",
+}) => {
   const cardRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
-
+  const colorClassMap = {
+    "blue-400": {
+      border: "border-blue-400",
+      bg: "bg-blue-400",
+      badge: "bg-blue-100 text-blue-500",
+    },
+  };
+  // Safely extract tailwind classes
+  const { border, bg, badge } = colorClassMap[selectedhuecolor] || {
+    border: "border-gray-300",
+    bg: "bg-gray-300",
+    badge: "bg-gray-200 text-gray-600",
+  };
   const isOverlapping = (newX, newY) => {
     const width = 288; // Tailwind w-72 in px
     const height = 160; // Approximate height of card
@@ -81,16 +100,53 @@ const BlockCard = ({ id, x, y, updatePosition, blocks }) => {
       ref={cardRef}
       onMouseDown={startDrag}
       onTouchStart={startDrag}
-      className="absolute w-72 max-w-full p-4 bg-white border border-gray-300 rounded-lg shadow-md cursor-move select-none transition-all"
+      className={`absolute w-72 max-w-full bg-white ${border} border-2 rounded-lg shadow-md cursor-move select-none transition-all`}
       style={{ left: `${x}px`, top: `${y}px` }}
     >
-      <h2 className="text-xl font-bold mb-2">Block {id}</h2>
-      <p className="text-gray-700 text-sm mb-3">
-        This is block #{id}. Drag me around!
-      </p>
-      <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
-        Action
-      </button>
+      <div className={`w-full h-2 rounded-t-md ${bg}`}></div>
+
+      <div className="p-4 pt-3">
+        <h2 className="text-lg font-bold mb-1">Block {id}</h2>
+        <div className="mb-2">
+          <h2 className="text-base font-semibold text-gray-900">Block Title</h2>
+          <p className="text-xs text-gray-600 mt-0.5">
+            This is a description of the block, summarizing its purpose or
+            contents.
+          </p>
+        </div>
+
+        <div className="text-xs mb-2">
+          <div>
+            <strong>Hash:</strong> 0x hash1234567890
+          </div>
+          <div>
+            <strong>Prev:</strong> 0x hash1234567890
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs">
+          <strong>
+            Gas: <span className="text-green-500 font-mono">0.000032 </span>
+          </strong>
+        </div>
+
+        <div className="text-xs mb-2 text-gray-700">
+          <span className="font-semibold">Timestamp:</span>{" "}
+          <span className="text-gray-500 ml-1">
+            {new Date().toLocaleTimeString()}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs mb-2">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${badge}`}>
+            {selectedhuecolor}
+          </span>
+        </div>
+
+        <div className="text-xs bg-gray-50 text-gray-800 p-2 rounded border border-gray-200 mb-1">
+          <strong>Data:</strong> Example text-only block data.
+        </div>
+      </div>
     </div>
   );
 };
