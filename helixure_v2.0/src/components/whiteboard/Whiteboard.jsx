@@ -1,56 +1,91 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import BlockCard from "./BlockCard";
 import InstructionDrawer from "./InstructionDrawer";
 import CreateBlockDrawer from "./CreateBlockDrawer";
 import SearchBlockModal from "./SearchBlockModal";
+import PoWGameModal from "./PoWGameModal";
+import { supabase } from "../../supabaseClient";
 
 const Whiteboard = () => {
-  const containerRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const spaceId = location.state?.spaceId;
+
+  const [blocks, setBlocks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activePanel, setActivePanel] = useState(null);
-  const toggleInstructionDrawer = () => {
-    setActivePanel((prev) => (prev === "instruction" ? null : "instruction"));
-  };
-
-  const toggleCreateDrawer = () => {
-    setActivePanel((prev) => (prev === "create" ? null : "create"));
-  };
-
-  const toggleSearchModal = () => {
-    setActivePanel((prev) => (prev === "search" ? null : "search"));
-  };
-
+  const [showPoWModal, setShowPoWModal] = useState(false);
+  const [pendingBlockCallback, setPendingBlockCallback] = useState(null);
   const [showGas, setShowGas] = useState(false);
-  const handleToggleGas = () => {
-    setShowGas((prev) => {
-      const newState = !prev;
-      toast(newState ? "Gas Meter Enabled" : "Gas Meter Disabled");
-      return newState;
-    });
-  };
-
   const [showGames, setShowGames] = useState(false);
+  const [gasUsed, setGasUsed] = useState(0.000028);
+  const [powGameName, setPowGameName] = useState(null);
+  const [requirePoW, setRequirePoW] = useState(false);
+
+  const containerRef = useRef(null);
+
+  // Toggle UI panels
+  const togglePanel = (panel) =>
+    setActivePanel((prev) => (prev === panel ? null : panel));
+
+  // Toggle PoW mode
   const handleToggleGames = () => {
-    setShowGames((prev) => {
+    setRequirePoW((prev) => {
       const newState = !prev;
       toast(newState ? "PoW Games Mode Enabled" : "PoW Games Mode Disabled");
       return newState;
     });
   };
 
+  const handleToggleGas = () => {
+    setShowGas((prev) => !prev);
+  };
+
+  const handlePoWBeforeBlockCreate = (callback) => {
+    if (requirePoW) {
+      setPendingBlockCallback(() => callback);
+      setShowPoWModal(true);
+    } else {
+      setGasUsed(0.000028);
+      setPowGameName("");
+      callback(); // ⬅️ Use the callback directly
+    }
+  };
+
+  // Called when PoW game is completed
+  const handlePoWSuccess = (gas, gameName) => {
+    setGasUsed(gas);
+    setPowGameName(gameName);
+    setShowPoWModal(false);
+    if (pendingBlockCallback) {
+      pendingBlockCallback(); // ✅ Call the pending callback
+      setPendingBlockCallback(null); // 🔁 Reset it
+    }
+  };
+
+  // Resize listener
   const [containerSize, setContainerSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
 
-  const [blocks, setBlocks] = useState([
-    { id: 1, title: "Block 1", x: 50, y: 100 },
-    { id: 2, title: "Block 2", x: 300, y: 300 },
-  ]);
+  useEffect(() => {
+    const handleResize = () => {
+      setContainerSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
+  // Clamp block positions within container
   const updatePosition = (id, x, y) => {
-    const cardWidth = 288; // Tailwind w-72
-    const cardHeight = 160; // Approx height of card
+    const cardWidth = 288;
+    const cardHeight = 160;
 
     const clampedX = Math.max(0, Math.min(containerSize.width - cardWidth, x));
     const clampedY = Math.max(
@@ -65,70 +100,44 @@ const Whiteboard = () => {
     );
   };
 
-  const getLinePath = () => {
-    const blockA = document.getElementById("block-1");
-    const blockB = document.getElementById("block-2");
-    const container = containerRef.current;
+  // Fetch blocks from Supabase
+  const fetchBlocks = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("space_block_table")
+      .select("*")
+      .eq("space_id", spaceId);
 
-    if (!blockA || !blockB || !container) return "";
-
-    const aRect = blockA.getBoundingClientRect();
-    const bRect = blockB.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-
-    // Start: exact center of sender block (Block A)
-    const aX = aRect.left - containerRect.left + aRect.width / 2;
-    const aY = aRect.top - containerRect.top + aRect.height / 2;
-
-    // Predefined anchor points on Block B
-    const bAnchors = {
-      "top-left": [bRect.left, bRect.top],
-      "top-center": [bRect.left + bRect.width / 2, bRect.top],
-      "top-right": [bRect.right, bRect.top],
-      "middle-left": [bRect.left, bRect.top + bRect.height / 2],
-      "middle-right": [bRect.right, bRect.top + bRect.height / 2],
-      "bottom-left": [bRect.left, bRect.bottom],
-      "bottom-center": [bRect.left + bRect.width / 2, bRect.bottom],
-      "bottom-right": [bRect.right, bRect.bottom],
-    };
-
-    // Find closest anchor point
-    let minDistance = Infinity;
-    let closestPoint = [0, 0];
-
-    for (const [_, [x, y]] of Object.entries(bAnchors)) {
-      const localX = x - containerRect.left;
-      const localY = y - containerRect.top;
-      const dist = Math.hypot(localX - aX, localY - aY);
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestPoint = [localX, localY];
-      }
+    if (error) {
+      console.error("Failed to fetch blocks:", error.message);
+    } else {
+      setBlocks(
+        data.map((block, idx) => ({
+          ...block,
+          x: 100 + idx * 50,
+          y: 100 + idx * 30,
+        }))
+      );
     }
-
-    const [bX, bY] = closestPoint;
-
-    return `M${aX},${aY} L${bX},${bY}`;
+    setLoading(false);
   };
 
   useEffect(() => {
-    const handleResize = () => {
-      setContainerSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-  useEffect(() => {
-    if (activePanel === "instruction") {
-      document.body.style.overflow = "hidden";
+    if (!spaceId) {
+      navigate("/playground");
     } else {
-      document.body.style.overflow = "";
+      fetchBlocks();
     }
+  }, [spaceId]);
+
+  // Lock scroll when a drawer is open
+  useEffect(() => {
+    document.body.style.overflow =
+      activePanel === "instruction" || activePanel === "create" ? "hidden" : "";
   }, [activePanel]);
+
+  // Temporary fallback if you don't yet generate paths dynamically
+  const getLinePath = () => "";
 
   return (
     <div
@@ -166,11 +175,20 @@ const Whiteboard = () => {
       {blocks.map((block) => (
         <BlockCard
           key={block.id}
-          id={block.id}
+          id={block.id} // used for React key & dragging
+          sr={block.block_sr} // for display as Block No
           x={block.x}
           y={block.y}
           updatePosition={updatePosition}
           blocks={blocks}
+          title={block.block_title}
+          description={block.block_description}
+          hash={block.hash}
+          previousHash={block.previous_hash}
+          hue_color={block.hue_color}
+          gas={Number(block.gas).toFixed(6)}
+          data={block.block_files?.[0]?.name || "No file attached"}
+          timestamp={block.timestamp}
         />
       ))}
       <div className="relative w-full max-w-lg mx-auto">
@@ -188,6 +206,16 @@ const Whiteboard = () => {
             </div>
           </div>
         )}
+        {/* Loading Spinner */}
+        {loading && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center backdrop-blur-sm bg-white/40 transition-opacity duration-300">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+              <div className="absolute inset-1 rounded-full bg-white"></div>
+            </div>
+          </div>
+        )}
+
         <div className="fixed z-50 w-full h-16 max-w-lg -translate-x-1/2 bg-white border border-gray-200 rounded-full bottom-4 left-1/2 dark:bg-gray-700 dark:border-gray-600">
           <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
             <button
@@ -260,7 +288,11 @@ const Whiteboard = () => {
               <button
                 data-tooltip-target="tooltip-new"
                 type="button"
-                onClick={() => toggleCreateDrawer((prev) => !prev)}
+                onClick={() =>
+                  setActivePanel((prev) =>
+                    prev === "create" ? null : "create"
+                  )
+                }
                 className="inline-flex items-center justify-center w-10 h-10 font-medium bg-blue-600 rounded-full hover:bg-blue-700 group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800"
               >
                 <svg
@@ -290,7 +322,11 @@ const Whiteboard = () => {
               <div className="tooltip-arrow" data-popper-arrow></div>
             </div>
             <button
-              onClick={handleToggleGas}
+              onClick={() => {
+                handlePoWBeforeBlockCreate(() => {
+                  setActivePanel("create");
+                });
+              }}
               data-tooltip-target="tooltip-gas"
               type="button"
               className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
@@ -327,7 +363,7 @@ const Whiteboard = () => {
             >
               <svg
                 className={`w-6 h-6 ${
-                  showGames ? "text-green-600" : "text-red-600"
+                  requirePoW ? "text-green-600" : "text-red-600"
                 } dark:text-white`}
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
@@ -356,18 +392,27 @@ const Whiteboard = () => {
         isOpen={activePanel === "instruction"}
         onClose={() => setActivePanel(null)}
       />
-
-      <CreateBlockDrawer
-        isOpen={activePanel === "create"}
-        onClose={() => setActivePanel(null)}
-      />
-
       <SearchBlockModal
         isOpen={activePanel === "search"}
         onClose={() => setActivePanel(null)}
         onSearch={(query) => {
           console.log("Searching for:", query);
         }}
+      />
+      <PoWGameModal
+        isOpen={showPoWModal}
+        onSuccess={handlePoWSuccess}
+        onClose={() => setShowPoWModal(false)}
+      />
+
+      <CreateBlockDrawer
+        isOpen={activePanel === "create"}
+        onClose={() => setActivePanel(null)}
+        spaceId={spaceId}
+        onSuccess={fetchBlocks}
+        requirePoW={requirePoW}
+        gasUsed={gasUsed}
+        powGameName={powGameName}
       />
     </div>
   );

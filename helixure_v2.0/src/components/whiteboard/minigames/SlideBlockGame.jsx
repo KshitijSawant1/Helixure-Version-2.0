@@ -8,7 +8,7 @@ import {
   FaBullseye,
 } from "react-icons/fa";
 
-const SlideBlockGame = ({ onComplete, onClose }) => {
+const SlideBlockGame = ({ onSuccess = () => {}, onClose = () => {} }) => {
   const gridSize = 3;
 
   const getRandomCell = () => ({
@@ -20,7 +20,7 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
     let start = getRandomCell();
     let end = getRandomCell();
     while (start.row === end.row && start.col === end.col) {
-      end = getRandomCell(); // Ensure they are not the same
+      end = getRandomCell(); // Prevent same start & end
     }
     return { start, end };
   };
@@ -39,8 +39,8 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
 
   const move = useCallback(
     (dr, dc) => {
-      const newRow = gameState.position.row + dr;
-      const newCol = gameState.position.col + dc;
+      const newRow = position.row + dr;
+      const newCol = position.col + dc;
 
       if (
         newRow >= 0 &&
@@ -48,7 +48,7 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
         newCol >= 0 &&
         newCol < gridSize
       ) {
-        const newGas = +(gameState.gas + 0.000005).toFixed(6);
+        const newGas = +(gas + 0.000005).toFixed(6);
         const newPosition = { row: newRow, col: newCol };
 
         setGameState((prev) => ({
@@ -57,14 +57,15 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
           gas: newGas,
         }));
 
-        if (newRow === gameState.end.row && newCol === gameState.end.col) {
-          setTimeout(() => onComplete(), 300);
+        if (newRow === end.row && newCol === end.col) {
+          setTimeout(() => onSuccess(newGas), 300);
         }
       }
     },
-    [gameState, setGameState, onComplete]
+    [position, end, gas, onSuccess]
   );
-  // Keyboard support
+
+  // Keyboard movement support
   useEffect(() => {
     const handleKeyDown = (e) => {
       switch (e.key) {
@@ -88,17 +89,26 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
           break;
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [move]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-[320px] shadow-xl text-center space-y-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-[320px] shadow-xl text-center space-y-4 relative">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-xl"
+        >
+          &times;
+        </button>
+
         <h2 className="font-semibold text-lg text-gray-800 dark:text-white">
           Slide the Block to the Goal
         </h2>
+
+        {/* Grid */}
         <div className="grid grid-cols-3 gap-2 w-fit mx-auto">
           {[...Array(gridSize)].map((_, row) =>
             [...Array(gridSize)].map((_, col) => {
@@ -126,6 +136,8 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
             })
           )}
         </div>
+
+        {/* Controls */}
         <div className="flex justify-center gap-2">
           <button
             onClick={() => move(-1, 0)}
@@ -155,6 +167,7 @@ const SlideBlockGame = ({ onComplete, onClose }) => {
           </button>
         </div>
 
+        {/* Gas Display */}
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
           Gas used: <span className="font-mono">{gas}</span>
         </p>

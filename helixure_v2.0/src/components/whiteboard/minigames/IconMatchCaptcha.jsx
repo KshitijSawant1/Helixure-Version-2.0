@@ -45,10 +45,11 @@ const icons = [
   { id: "compass", icon: <FaCompass /> },
 ];
 
-const IconMatchCaptcha = ({ onComplete }) => {
+const IconMatchCaptcha = ({ onSuccess = () => {}, onClose = () => {} }) => {
   const [options, setOptions] = useState([]);
   const [target, setTarget] = useState(null);
   const [gas, setGas] = useState(0.0);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     const shuffled = [...icons].sort(() => Math.random() - 0.5).slice(0, 4);
@@ -58,9 +59,12 @@ const IconMatchCaptcha = ({ onComplete }) => {
   }, []);
 
   const handleClick = (clickedId) => {
+    if (locked) return;
     setGas((prev) => +(prev + 0.000005).toFixed(6));
+
     if (clickedId === target.id) {
-      setTimeout(() => onComplete(), 200);
+      setLocked(true);
+      setTimeout(() => onSuccess(gas), 200);
     } else {
       alert("❌ Incorrect icon! Try again.");
     }
@@ -68,15 +72,25 @@ const IconMatchCaptcha = ({ onComplete }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center space-y-4 w-80">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center space-y-4 w-80 relative">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-xl"
+        >
+          &times;
+        </button>
+
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
           Icon Match CAPTCHA
         </h2>
+
         {target && (
           <p className="text-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2">
             Find this icon: <span className="text-2xl">{target.icon}</span>
           </p>
         )}
+
         <div className="flex justify-center gap-4 text-2xl">
           {options.map((item, index) => (
             <button
@@ -88,6 +102,7 @@ const IconMatchCaptcha = ({ onComplete }) => {
             </button>
           ))}
         </div>
+
         <p className="text-sm text-gray-600 dark:text-gray-300">
           Gas used: <span className="font-mono">{gas}</span>
         </p>
