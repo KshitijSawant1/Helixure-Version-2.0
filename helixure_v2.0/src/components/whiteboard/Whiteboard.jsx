@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import BlockCard from "./BlockCard";
 import InstructionDrawer from "./InstructionDrawer";
+import InstructionModal from "./InstructionModal";
 import CreateBlockDrawer from "./CreateBlockDrawer";
 import SearchBlockModal from "./SearchBlockModal";
 import PoWGameModal from "./PoWGameModal";
@@ -23,6 +24,7 @@ const Whiteboard = () => {
   const [powGameName, setPowGameName] = useState(null);
   const [requirePoW, setRequirePoW] = useState(false);
   const [totalGasUsed, setTotalGasUsed] = useState("0.000000");
+  const [showInstructionModal, setShowInstructionModal] = useState(false);
 
   const containerRef = useRef(null);
 
@@ -137,6 +139,7 @@ const Whiteboard = () => {
       navigate("/playground");
     } else {
       fetchBlocks();
+      checkSpaceEntry(); // <- only run after spaceId is confirmed
     }
   }, [spaceId]);
 
@@ -148,6 +151,31 @@ const Whiteboard = () => {
 
   // Temporary fallback if you don't yet generate paths dynamically
   const getLinePath = () => "";
+  const checkSpaceEntry = async () => {
+    if (!spaceId) return;
+
+    const { data, error } = await supabase
+      .from("playground")
+      .select("total_gas")
+      .eq("id", spaceId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching space info:", error.message);
+      return;
+    }
+
+    if (data.total_gas === 0) {
+      const seen = sessionStorage.getItem(`seenInstructions-${spaceId}`);
+      if (!seen) {
+        setShowInstructionModal(true);
+        sessionStorage.setItem(`seenInstructions-${spaceId}`, "true");
+      }
+    }
+  };
+  useEffect(() => {
+    if (spaceId) checkSpaceEntry();
+  }, [spaceId]);
 
   return (
     <div
@@ -421,6 +449,10 @@ const Whiteboard = () => {
         gasUsed={gasUsed}
         powGameName={powGameName}
       />
+
+      {showInstructionModal && (
+        <InstructionModal onClose={() => setShowInstructionModal(false)} />
+      )}
     </div>
   );
 };
