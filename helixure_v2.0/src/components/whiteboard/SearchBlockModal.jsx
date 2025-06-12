@@ -1,12 +1,33 @@
 import React, { useState } from "react";
 import BlockCardPreview from "./BlockCardPreview";
-const SearchBlockModal = ({ isOpen, onClose, onSearch }) => {
+import { supabase } from "../../supabaseClient";
+
+const SearchBlockModal = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [blocks, setBlocks] = useState([]);
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    onSearch(searchQuery);
+
+    if (!searchQuery.trim()) {
+      alert("Please enter a valid search query.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("space_block_table")
+      .select("*")
+      .ilike("block_title", `%${searchQuery}%`);
+
+    if (error || !data || data.length === 0) {
+      setBlocks([]);
+      setShowPreview(false);
+      alert("No matching blocks found!");
+      return;
+    }
+
+    setBlocks(data);
     setShowPreview(true);
   };
 
@@ -52,17 +73,28 @@ const SearchBlockModal = ({ isOpen, onClose, onSearch }) => {
           </div>
         </form>
 
-        {showPreview && (
+        {showPreview && blocks.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-md font-semibold mb-2 text-gray-800 dark:text-white">
-              Block Preview
+            <h3 className="text-md font-semibold mb-4 text-gray-800 dark:text-white">
+              Matching Blocks
             </h3>
-            <BlockCardPreview
-              id="abc123"
-              title="Block Title"
-              description="This is a description of the block, summarizing its purpose or contents."
-              selectedhuecolor="green-500"
-            />
+
+            <div className="flex flex-wrap gap-4 justify-center max-h-[70vh] overflow-y-auto pr-2">
+              {blocks.map((block, index) => (
+                <BlockCardPreview
+                  key={block.id}
+                  sr={block.block_sr || index + 1}
+                  title={block.block_title}
+                  description={block.block_description}
+                  hash={block.hash}
+                  previousHash={block.previous_hash}
+                  gas={block.gas}
+                  timestamp={block.timestamp}
+                  hue_color={block.hue_color}
+                  data={block.block_files?.[0]?.name}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

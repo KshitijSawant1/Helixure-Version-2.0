@@ -1,7 +1,6 @@
 // src/components/whiteboard/BlockCard.jsx
 import React, { useRef, useEffect, useState } from "react";
-import getBlockColor from "../../utils/getBlockColor";
-import clsx from "clsx";
+import getTextColorFromBg from "../../utils/getTextColorFromBg";
 
 const BlockCard = ({
   id,
@@ -22,11 +21,24 @@ const BlockCard = ({
   const cardRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
+  let hueColorParsed = {
+    label: "Default",
+    borderLabel: "border-gray-400",
+    color: "#9CA3AF",
+  };
+
+  try {
+    hueColorParsed =
+      typeof hue_color === "string" ? JSON.parse(hue_color) : hue_color;
+  } catch (err) {
+    console.warn("Failed to parse hue_color:", hue_color);
+  }
+
   const {
     label: hue_color_label,
     borderLabel: borderColor,
     color: fallbackColor,
-  } = getBlockColor();
+  } = hueColorParsed;
 
   const badge = hue_color.replace("bg-", "bg-") + " text-gray-700";
 
@@ -166,8 +178,11 @@ const BlockCard = ({
 
         <div className="flex items-center justify-between text-xs mb-2">
           <span
-            className="px-2 py-0.5 rounded-full text-[10px] text-gray-800"
-            style={{ backgroundColor: fallbackColor }}
+            className="px-2 py-0.5 rounded-full text-[10px]"
+            style={{
+              backgroundColor: fallbackColor,
+              color: getTextColorFromBg(fallbackColor),
+            }}
           >
             {hue_color_label}
           </span>

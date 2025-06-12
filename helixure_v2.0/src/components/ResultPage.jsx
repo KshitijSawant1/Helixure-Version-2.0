@@ -4,6 +4,7 @@ import InstructionModal from "../components/whiteboard/InstructionModal";
 import SlideBlockGame from "./whiteboard/minigames/SlideBlockGame";
 import DragDropSortGame from "./whiteboard/minigames/DragSortGame";
 import PinUnlockGame from "./whiteboard/minigames/PinUnlockGame";
+import PageNotFound from "./PageNotFound";
 
 import IconMatchCaptcha from "./whiteboard/minigames/IconMatchCaptcha";
 
@@ -97,6 +98,8 @@ const ResultPage = () => {
           onClose={() => setShowEmojiGame(false)}
         />
       )}
+
+      <PageNotFound />
     </div>
   );
 };

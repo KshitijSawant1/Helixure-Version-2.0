@@ -19,10 +19,10 @@ const Whiteboard = () => {
   const [showPoWModal, setShowPoWModal] = useState(false);
   const [pendingBlockCallback, setPendingBlockCallback] = useState(null);
   const [showGas, setShowGas] = useState(false);
-  const [showGames, setShowGames] = useState(false);
   const [gasUsed, setGasUsed] = useState(0.000028);
   const [powGameName, setPowGameName] = useState(null);
   const [requirePoW, setRequirePoW] = useState(false);
+  const [totalGasUsed, setTotalGasUsed] = useState("0.000000");
 
   const containerRef = useRef(null);
 
@@ -103,22 +103,32 @@ const Whiteboard = () => {
   // Fetch blocks from Supabase
   const fetchBlocks = async () => {
     setLoading(true);
+
+    // Step 1: Fetch blocks
     const { data, error } = await supabase
       .from("space_block_table")
       .select("*")
       .eq("space_id", spaceId);
 
     if (error) {
-      console.error("Failed to fetch blocks:", error.message);
-    } else {
-      setBlocks(
-        data.map((block, idx) => ({
-          ...block,
-          x: 100 + idx * 50,
-          y: 100 + idx * 30,
-        }))
-      );
+      console.error("❌ Failed to fetch blocks:", error.message);
+      return;
     }
+
+    // Step 2: Set block positions
+    const positionedBlocks = data.map((block, idx) => ({
+      ...block,
+      x: 100 + idx * 50,
+      y: 100 + idx * 30,
+    }));
+    setBlocks(positionedBlocks);
+
+    // ✅ Step 3: Calculate total gas
+    const totalGas = parseFloat(
+      data.reduce((sum, block) => sum + Number(block.gas), 0).toFixed(6)
+    );
+    setTotalGasUsed(totalGas.toFixed(6));
+
     setLoading(false);
   };
 
@@ -202,7 +212,7 @@ const Whiteboard = () => {
               }}
             >
               Gas Used:{" "}
-              <span className="font-bold text-blue-600">0.000028</span>
+              <span className="font-bold text-blue-600">{totalGasUsed}</span>
             </div>
           </div>
         )}
@@ -220,7 +230,7 @@ const Whiteboard = () => {
           <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
             <button
               data-tooltip-target="tooltip-info"
-              onClick={() => toggleInstructionDrawer((prev) => !prev)}
+              onClick={() => togglePanel("instruction")}
               type="button"
               className="inline-flex flex-col items-center justify-center px-5 rounded-s-full hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
@@ -254,7 +264,7 @@ const Whiteboard = () => {
             <button
               data-tooltip-target="tooltip-search"
               type="button"
-              onClick={() => toggleSearchModal((prev) => !prev)}
+              onClick={() => togglePanel("search")}
               className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
               <svg
@@ -322,11 +332,7 @@ const Whiteboard = () => {
               <div className="tooltip-arrow" data-popper-arrow></div>
             </div>
             <button
-              onClick={() => {
-                handlePoWBeforeBlockCreate(() => {
-                  setActivePanel("create");
-                });
-              }}
+              onClick={handleToggleGas}
               data-tooltip-target="tooltip-gas"
               type="button"
               className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
@@ -391,6 +397,7 @@ const Whiteboard = () => {
       <InstructionDrawer
         isOpen={activePanel === "instruction"}
         onClose={() => setActivePanel(null)}
+        spaceId={spaceId}
       />
       <SearchBlockModal
         isOpen={activePanel === "search"}

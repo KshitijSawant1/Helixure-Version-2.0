@@ -1,11 +1,13 @@
+// 🧱 Imports
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { supabase } from "../../supabaseClient";
-import "./InstructionModal.css";
 import hashBlock from "../../utils/hashBlock";
 import getBlockColor from "../../utils/getBlockColor";
 import PoWGameModal from "./PoWGameModal";
+import "./InstructionModal.css";
 
+// 🧠 Component
 const CreateBlockDrawer = ({
   isOpen,
   onClose,
@@ -15,43 +17,40 @@ const CreateBlockDrawer = ({
   gasUsed,
   powGameName,
 }) => {
+  // 🧾 State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const [showPoWModal, setShowPoWModal] = useState(false);
 
+  // 🛠 Block creation logic
   const createBlock = async (gasValue = 0.000028, gameName = "") => {
-    const numericGas = Number(gasValue); // Ensure it's a number
-    const gasForDB = requirePoW ? parseFloat(numericGas.toFixed(6)) : 0.000028;
-
-    console.log("🛠 Inserting block with gas:", gasForDB);
+    // Gas setup
+    const gasForDB = requirePoW
+      ? parseFloat(Number(gasValue).toFixed(6))
+      : 0.000028;
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("User not found");
-
     const user_id = user.id;
-    let fileURL = null;
 
-    // Upload file if provided
+    // File upload
+    let fileURL = null;
     if (file) {
-      const filePath = `blocks/${Date.now()}-${file.name}`;
+      const path = `blocks/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("block-files")
-        .upload(filePath, file);
+        .upload(path, file);
       if (uploadError) throw new Error("File upload failed");
-
-      const { data: publicUrlData } = supabase.storage
-        .from("block-files")
-        .getPublicUrl(filePath);
-      fileURL = publicUrlData?.publicUrl;
+      fileURL = supabase.storage.from("block-files").getPublicUrl(path)
+        .data.publicUrl;
     }
 
-    // Get the previous block in the space
+    // Previous block
     const { data: latestBlock } = await supabase
       .from("space_block_table")
       .select("block_sr, hash")
@@ -61,11 +60,12 @@ const CreateBlockDrawer = ({
       .single();
 
     const nextBlockSr = (latestBlock?.block_sr || 0) + 1;
-    const previousHash = latestBlock?.hash || "";
+    const previousHash = latestBlock ? latestBlock.hash : "00000000000000000000000000000000000000000"; // ✅ ← Update made here
+
     const hueColor = getBlockColor();
 
-    // Prepare block data
-    const blockDataToHash = {
+    // Block data
+    const blockData = {
       user_id,
       space_id: spaceId,
       block_sr: nextBlockSr,
@@ -77,35 +77,78 @@ const CreateBlockDrawer = ({
       previous_hash: previousHash,
       hue_color: hueColor,
       pow_solved: requirePoW,
-      // When inserting:
       gas: gasForDB,
-
       pow_game: requirePoW ? gameName : "",
-
       timestamp: new Date().toISOString().replace("Z", ""),
     };
 
-    const generatedHash = hashBlock(blockDataToHash);
-
-    // Insert block
+    // Hashing & Insertion
+    const generatedHash = hashBlock(blockData);
     const { error: insertError } = await supabase
       .from("space_block_table")
-      .insert({
-        ...blockDataToHash,
-        hash: generatedHash,
-      });
-
+      .insert({ ...blockData, hash: generatedHash });
     if (insertError) throw new Error(insertError.message || "Insert failed");
 
-    toast.success("Block created successfully!");
+    // ✅ Update total gas after new block
+    await updateTotalGasAfterNewBlock({
+      user_id,
+      space_id: spaceId,
+      newBlockGas: gasForDB,
+    });
+
+    toast.success("Block created!");
     onSuccess?.();
     resetForm();
+  };
+
+  // ✅ Function: Recalculate and update total_gas for a given user + space
+  const updateTotalGasAfterNewBlock = async ({
+    user_id,
+    space_id,
+    newBlockGas,
+  }) => {
+    try {
+      const { data: blocks, error } = await supabase
+        .from("space_block_table")
+        .select("gas")
+        .eq("space_id", space_id);
+
+      if (error) {
+        console.error("❌ Error fetching block gas values:", error.message);
+        return;
+      }
+
+      const totalGas = blocks.reduce((sum, b) => sum + (Number(b.gas) || 0), 0);
+      const updatedGas = parseFloat(
+        (totalGas + Number(newBlockGas)).toFixed(6)
+      );
+
+      const { error: updateError } = await supabase
+        .from("playground")
+        .update({ total_gas: updatedGas })
+        .match({ id: space_id, user_id });
+
+      console.log("➡️ Updating total_gas in playground", {
+        space_id,
+        updatedGas,
+      });
+      if (updateError) {
+        console.error("❌ Failed to update total_gas:", updateError.message);
+      } else {
+        console.log("✅ total_gas updated to:", updatedGas);
+      }
+    } catch (err) {
+      console.error(
+        "❌ Exception in updateTotalGasAfterNewBlock:",
+        err.message
+      );
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !description || !spaceId) {
-      toast.error("All fields including spaceId are required.");
+      toast.error("All fields are required.");
       return;
     }
 
@@ -116,10 +159,9 @@ const CreateBlockDrawer = ({
 
     try {
       setLoading(true);
-      await createBlock(); // Directly create block if PoW is not required
-    } catch (error) {
-      toast.error(error.message || "Block creation failed");
-      console.error(error);
+      await createBlock(); // Without PoW
+    } catch (err) {
+      toast.error(err.message || "Failed");
     } finally {
       setLoading(false);
     }
