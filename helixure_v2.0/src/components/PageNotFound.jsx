@@ -1,19 +1,50 @@
-// src/components/PageNotFound.jsx
 import React from "react";
-import { Link } from "react-router-dom";
 
 const PageNotFound = () => {
   return (
-    <div className="flex flex-col justify-center items-center h-screen text-center px-4">
-      <h1 className="text-5xl font-bold text-red-600">404</h1>
-      <p className="text-xl mt-4">Oops! Page not found.</p>
-      <Link
-        to="/"
-        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+    <section className="bg-white dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen relative">
+      <div className="flex flex-wrap items-center justify-center gap-4 md:gap-10 pb-10">
+        {/* First 4 */}
+        <div className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-extrabold text-blue-600 dark:text-blue-400">
+          4
+        </div>
+
+        {/* The animated 0 (styled div) */}
+        <div
+          className="w-32 h-32 sm:w-40 sm:h-40 md:w-56 md:h-56 lg:w-72 lg:h-72 bg-gradient-to-tr from-blue-500 to-violet-500 rounded-[20%]"
+          style={{
+            animation: "spin 5s linear infinite",
+          }}
+        ></div>
+
+        {/* Second 4 */}
+        <div className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-extrabold text-blue-600 dark:text-blue-400">
+          4
+        </div>
+      </div>
+
+      <p className="mt-8 text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">
+        Oops, page not found!
+      </p>
+      <p className="mb-8 text-base sm:text-lg md:text-xl text-gray-500 dark:text-gray-400">
+        The page you're looking for doesn’t exist.
+      </p>
+      <a
+        href="/"
+        className="inline-block px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-base sm:text-lg font-medium dark:bg-blue-600 dark:hover:bg-blue-700"
       >
-        Go Back Home
-      </Link>
-    </div>
+        Back to Home
+      </a>
+
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </section>
   );
 };
 

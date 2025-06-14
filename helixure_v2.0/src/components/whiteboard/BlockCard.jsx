@@ -17,22 +17,41 @@ const BlockCard = ({
   gas = "0.000000",
   data = "Empty",
   timestamp = new Date().toISOString(),
+  isFlowMode = false,
 }) => {
+  const cardPositionStyle = isFlowMode
+    ? {}
+    : {
+        position: "absolute",
+        left: `${x}px`,
+        top: `${y}px`,
+      };
+
   const cardRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
-  let hueColorParsed = {
-    label: "Default",
-    borderLabel: "border-gray-400",
-    color: "#9CA3AF",
-  };
 
-  try {
-    hueColorParsed =
-      typeof hue_color === "string" ? JSON.parse(hue_color) : hue_color;
-  } catch (err) {
-    console.warn("Failed to parse hue_color:", hue_color);
-  }
+let hueColorParsed = {
+  label: "Default",
+  borderLabel: "border-gray-400",
+  color: "#9CA3AF",
+};
+
+try {
+  hueColorParsed =
+    typeof hue_color === "string" && hue_color.includes("{")
+      ? JSON.parse(hue_color)
+      : typeof hue_color === "object"
+      ? hue_color
+      : {
+          label: hue_color,
+          borderLabel: "border-gray-400",
+          color: "#9CA3AF", // fallback HEX
+        };
+} catch (err) {
+  console.warn("Failed to parse hue_color:", hue_color);
+}
+
 
   const {
     label: hue_color_label,
@@ -117,13 +136,14 @@ const BlockCard = ({
     <div
       id={`block-${id}`}
       ref={cardRef}
-      onMouseDown={startDrag}
-      onTouchStart={startDrag}
-      className="absolute w-72 max-w-full bg-white border-2 rounded-lg shadow-md hover:shadow-lg transition-all cursor-move select-none"
+      onMouseDown={!isFlowMode ? startDrag : undefined}
+      onTouchStart={!isFlowMode ? startDrag : undefined}
+      className={`w-72 max-w-full bg-white border-2 rounded-lg shadow-md hover:shadow-lg transition-all select-none ${
+        isFlowMode ? "" : "absolute cursor-move"
+      }`}
       style={{
-        left: `${x}px`,
-        top: `${y}px`,
-        borderColor: fallbackColor, // HEX from getBlockColor
+        ...(isFlowMode ? {} : { left: `${x}px`, top: `${y}px` }),
+        borderColor: fallbackColor,
       }}
     >
       <div

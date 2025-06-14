@@ -8,13 +8,16 @@ import CreateBlockDrawer from "./CreateBlockDrawer";
 import SearchBlockModal from "./SearchBlockModal";
 import PoWGameModal from "./PoWGameModal";
 import { supabase } from "../../supabaseClient";
+import BlockFlow from "./BlockFlow";
+import { ReactFlowProvider } from "reactflow";
 
 const Whiteboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const spaceId = location.state?.spaceId;
 
-  const [blocks, setBlocks] = useState([]);
+  const [viewMode, setViewMode] = useState("cards"); // "cards" or "flow"
+  const [blocks, setBlocks] = useState([]); // 👈 Define blocks with state
   const [loading, setLoading] = useState(true);
   const [activePanel, setActivePanel] = useState(null);
   const [showPoWModal, setShowPoWModal] = useState(false);
@@ -118,12 +121,21 @@ const Whiteboard = () => {
     }
 
     // Step 2: Set block positions
+    const CARD_WIDTH = 288;
+    const CARD_HEIGHT = 200;
+    const GAP_X = 40; // ⬅️ horizontal gap between cards
+    const GAP_Y = 120; // ⬅️ vertical gap between cards
+    const CARDS_PER_ROW = 5;
+    const OFFSET_X = 10;
+    const OFFSET_Y = 10;
+
     const positionedBlocks = data.map((block, idx) => ({
       ...block,
-      x: 100 + idx * 50,
-      y: 100 + idx * 30,
+      x: OFFSET_X + (idx % CARDS_PER_ROW) * (CARD_WIDTH + GAP_X),
+      y: OFFSET_Y + Math.floor(idx / CARDS_PER_ROW) * (CARD_HEIGHT + GAP_Y),
     }));
-    setBlocks(positionedBlocks);
+
+    setBlocks(positionedBlocks); // ✅ Add this line
 
     // ✅ Step 3: Calculate total gas
     const totalGas = parseFloat(
@@ -177,6 +189,15 @@ const Whiteboard = () => {
     if (spaceId) checkSpaceEntry();
   }, [spaceId]);
 
+  useEffect(() => {
+    const savedMode = sessionStorage.getItem("viewMode");
+    if (savedMode) setViewMode(savedMode);
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem("viewMode", viewMode);
+  }, [viewMode]);
+
   return (
     <div
       ref={containerRef}
@@ -208,27 +229,35 @@ const Whiteboard = () => {
           markerEnd="url(#arrow)"
         />
       </svg>
-
       {/* Render Block Cards */}
-      {blocks.map((block) => (
-        <BlockCard
-          key={block.id}
-          id={block.id} // used for React key & dragging
-          sr={block.block_sr} // for display as Block No
-          x={block.x}
-          y={block.y}
-          updatePosition={updatePosition}
-          blocks={blocks}
-          title={block.block_title}
-          description={block.block_description}
-          hash={block.hash}
-          previousHash={block.previous_hash}
-          hue_color={block.hue_color}
-          gas={Number(block.gas).toFixed(6)}
-          data={block.block_files?.[0]?.name || "No file attached"}
-          timestamp={block.timestamp}
-        />
-      ))}
+      {viewMode === "cards" ? (
+        blocks.map((block) => (
+          <BlockCard
+            key={block.id}
+            id={block.id}
+            sr={block.block_sr}
+            x={block.x}
+            y={block.y}
+            updatePosition={updatePosition}
+            blocks={blocks}
+            title={block.block_title}
+            description={block.block_description}
+            hash={block.hash}
+            previousHash={block.previous_hash}
+            hue_color={block.hue_color}
+            gas={Number(block.gas).toFixed(6)}
+            data={block.block_files?.[0]?.name || "No file attached"}
+            timestamp={block.timestamp}
+          />
+        ))
+      ) : (
+        <div className="w-screen h-[calc(100vh-64px)] relative z-10">
+          <ReactFlowProvider>
+            <BlockFlow blocks={blocks} setBlocks={setBlocks} />
+          </ReactFlowProvider>
+        </div>
+      )}
+
       <div className="relative w-full max-w-lg mx-auto">
         {showGas && (
           <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50">
@@ -273,7 +302,7 @@ const Whiteboard = () => {
               >
                 <path
                   fillRule="evenodd"
-                  d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 1 0 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
+                  d="M9.586 2.586A2 2 0 0 1 11 2h2a2 2 0 0 1 2 2v.089l.473.196.063-.063a2.002 2.002 0 0 1 2.828 0l1.414 1.414a2 2 0 0 1 0 2.827l-.063.064.196.473H20a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-.089l-.196.473.063.063a2.002 2.002 0 0 1 0 2.828l-1.414 1.414a2 2 0 0 1-2.828 0l-.063-.063-.473.196V20a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-.089l-.473-.196-.063.063a2.002 2.002 0 0 1-2.828 0l-1.414-1.414a2 2 0 0 1 0-2.827l.063-.064L4.089 15H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h.09l.195-.473-.063-.063a2 2 0 0 1 0-2.828l1.414-1.414a2 2 0 0 1 2.827 0l.064.063L9 4.089V4a2 2 0 0 1 .586-1.414ZM8 12a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
                   clipRule="evenodd"
                 />
               </svg>
@@ -360,26 +389,43 @@ const Whiteboard = () => {
               <div className="tooltip-arrow" data-popper-arrow></div>
             </div>
             <button
-              onClick={handleToggleGas}
-              data-tooltip-target="tooltip-gas"
+              onClick={() =>
+                setViewMode(viewMode === "cards" ? "flow" : "cards")
+              }
               type="button"
+              data-tooltip-target="tooltip-view"
               className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
             >
-              <svg
-                className={`w-6 h-6 ${
-                  showGas ? "text-green-600" : "text-red-600"
-                } dark:text-white`}
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M18.045 3.007 12.31 3a1.965 1.965 0 0 0-1.4.585l-7.33 7.394a2 2 0 0 0 0 2.805l6.573 6.631a1.957 1.957 0 0 0 1.4.585 1.965 1.965 0 0 0 1.4-.585l7.409-7.477A2 2 0 0 0 21 11.479v-5.5a2.972 2.972 0 0 0-2.955-2.972Zm-2.452 6.438a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
-              </svg>
+              {viewMode === "cards" ? (
+                // Cards → Flow view (show flow icon)
+                <svg
+                  className="w-6 h-6 text-gray-800 dark:text-white"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8 3a3 3 0 0 0-1 5.83v6.34a3.001 3.001 0 1 0 2 0V15a2 2 0 0 1 2-2h1a5.002 5.002 0 0 0 4.927-4.146A3.001 3.001 0 0 0 16 3a3 3 0 0 0-1.105 5.79A3.001 3.001 0 0 1 12 11h-1c-.729 0-1.412.195-2 .535V8.83A3.001 3.001 0 0 0 8 3Z" />
+                </svg>
+              ) : (
+                // Flow → Cards view (show card icon)
+                <svg
+                  className="w-6 h-6 text-gray-800 dark:text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.414A2 2 0 0 0 20.414 6L18 3.586A2 2 0 0 0 16.586 3H5Zm10 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7V5h8v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
 
-              <span className="sr-only">gas</span>
+              <span className="sr-only">Switch View</span>
             </button>
             <div
               id="tooltip-gas"
@@ -426,6 +472,8 @@ const Whiteboard = () => {
         isOpen={activePanel === "instruction"}
         onClose={() => setActivePanel(null)}
         spaceId={spaceId}
+        showGas={showGas}
+        toggleGas={handleToggleGas}
       />
       <SearchBlockModal
         isOpen={activePanel === "search"}
@@ -433,6 +481,7 @@ const Whiteboard = () => {
         onSearch={(query) => {
           console.log("Searching for:", query);
         }}
+        spaceId={spaceId}
       />
       <PoWGameModal
         isOpen={showPoWModal}

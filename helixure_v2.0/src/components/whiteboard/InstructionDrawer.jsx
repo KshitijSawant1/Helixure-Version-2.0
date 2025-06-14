@@ -3,7 +3,13 @@ import "./InstructionModal.css";
 import PoWShowcase from "./PoWShowcase";
 import EditSpaceForm from "./EditSpaceModal";
 
-const InstructionDrawer = ({ isOpen, onClose, spaceId }) => {
+const InstructionDrawer = ({
+  isOpen,
+  onClose,
+  spaceId,
+  showGas,
+  toggleGas,
+}) => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -476,6 +482,32 @@ const InstructionDrawer = ({ isOpen, onClose, spaceId }) => {
             spaceId={spaceId}
             onUpdated={() => console.log("Updated")}
           />
+          <div className="mt-6 flex items-center justify-between w-full">
+            <span className="text-m font-medium text-gray-900 dark:text-gray-300">
+              Show Gas Usage
+            </span>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={showGas}
+                onChange={toggleGas}
+              />
+              <div
+                className="relative w-11 h-6 bg-gray-200 rounded-full border border-gray-400
+      peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 
+      dark:bg-gray-700 dark:border-gray-600 
+      peer-checked:after:translate-x-full 
+      rtl:peer-checked:after:-translate-x-full 
+      peer-checked:after:border-white 
+      after:content-[''] after:absolute after:top-0.5 after:start-[2px] 
+      after:bg-white after:border-gray-300 after:border after:rounded-full 
+      after:h-5 after:w-5 after:transition-all 
+      peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"
+              ></div>
+            </label>
+          </div>
+
           <hr class="w-full h-1 my-4 bg-gray-300 border-0 rounded-sm dark:bg-gray-700" />
 
           <h2 className="text-xl font-bold text-gray-700 dark:text-gray-100">

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import BlockCardPreview from "./BlockCardPreview";
 import { supabase } from "../../supabaseClient";
 
-const SearchBlockModal = ({ isOpen, onClose }) => {
+const SearchBlockModal = ({ isOpen, onClose, spaceId }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [blocks, setBlocks] = useState([]);
@@ -18,6 +18,7 @@ const SearchBlockModal = ({ isOpen, onClose }) => {
     const { data, error } = await supabase
       .from("space_block_table")
       .select("*")
+      .eq("space_id", spaceId) // ✅ Filter by current space
       .ilike("block_title", `%${searchQuery}%`);
 
     if (error || !data || data.length === 0) {
