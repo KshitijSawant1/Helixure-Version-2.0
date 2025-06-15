@@ -5,6 +5,8 @@ import defpfp from "../assets/images/defpfp.png";
 import { supabase } from "../supabaseClient";
 import html2canvas from "html2canvas";
 import { toast } from "react-toastify";
+import helixureIcon from "../assets/logos/hv2b.png";
+import AvatarModal from "./AvatarModal";
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -12,6 +14,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const metadata = user?.user_metadata || {};
   const memberSince = user?.user_metadata?.memberSince;
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const formattedMemberSince = new Date(memberSince).toLocaleDateString(
     "en-IN",
@@ -30,7 +33,7 @@ const Profile = () => {
   const handleSelect = (status) => {
     setSelected(status);
     setFormState((prev) => ({ ...prev, status }));
-    updateSingleField("status", status); 
+    updateSingleField("status", status);
     setIsOpen(false);
   };
 
@@ -89,6 +92,26 @@ const Profile = () => {
       console.error("Sign out error:", err);
     }
   };
+
+  const isFormComplete = () => {
+    const requiredFields = [
+      "firstname",
+      "lastname",
+      "dob",
+      "phone",
+      "company",
+      "designation",
+      "email",
+      "tagline",
+      "bio",
+      "avatarUrl",
+    ];
+
+    return requiredFields.every((field) => {
+      return formState[field] && formState[field].toString().trim() !== "";
+    });
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -166,7 +189,7 @@ const Profile = () => {
 
         setSelectedimgColor("gray");
 
-        return; 
+        return;
       }
 
       // Only run if profile data was found
@@ -194,7 +217,7 @@ const Profile = () => {
       id: user.id,
       ...formState,
       selectedColor: selectedimgColor,
-      memberSince: metadata.memberSince || new Date().toISOString(), // optional safety
+      memberSince: metadata.memberSince || new Date().toISOString(),
     });
 
     if (error) {
@@ -203,6 +226,12 @@ const Profile = () => {
     } else {
       console.log("Profile saved successfully.");
       setIsEditing(false);
+      toast.success("Profile saved!");
+
+      // ✅ If complete, navigate to playground
+      if (isFormComplete()) {
+        navigate("/playground");
+      }
     }
   };
 
@@ -316,20 +345,12 @@ const Profile = () => {
                       }`,
                     }}
                   >
-                    <div className="p-4 z-10 transition-opacity group-hover:absolute group-hover:opacity-0 sm:p-6 lg:p-8">
-                      <svg
-                        className="size-10 sm:size-12"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
+                    <div className="p-4 z-10 transition-opacity group-hover:absolute group-hover:opacity-0 sm:p-6 lg:p-8 flex justify-center items-center">
+                      <img
+                        src={helixureIcon}
+                        alt="Helixure Icon"
+                        className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+                      />
                     </div>
 
                     <div className="relative h-full w-full">
@@ -655,7 +676,6 @@ const Profile = () => {
                     className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                   />
                 </div>
-
                 <div className="mb-6 text-left">
                   <label
                     htmlFor="file_input"
@@ -663,14 +683,36 @@ const Profile = () => {
                   >
                     Upload profile picture
                   </label>
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    id="file_input"
-                    disabled={!isEditing}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                  />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="file"
+                      onChange={handleFileUpload}
+                      id="file_input"
+                      disabled={!isEditing}
+                      className="min-w-0 flex-grow text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarModal(true)}
+                      disabled={!isEditing}
+                      className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-cyan-500 to-blue-500 group-hover:from-cyan-500 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
+                    >
+                      <span className="relative px-4 py-2 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                        Choose Prebuilt Avatar
+                      </span>
+                    </button>
+                  </div>
                 </div>
+
+                {showAvatarModal && (
+                  <AvatarModal
+                    setFormState={setFormState}
+                    formState={formState}
+                    closeModal={() => setShowAvatarModal(false)}
+                    userId={user.id}
+                  />
+                )}
+
                 <div className="flex justify-end space-x-2">
                   {!isEditing ? (
                     <button
@@ -678,18 +720,31 @@ const Profile = () => {
                         e.preventDefault();
                         setIsEditing(true);
                       }}
-                      className="rounded bg-yellow-500 px-3 py-1 text-white hover:bg-yellow-600"
+                      className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
                     >
-                      Edit Profile
+                      <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                        Edit Profile
+                      </span>
                     </button>
                   ) : (
                     <>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          handleSaveProfile();
+                          if (isFormComplete()) {
+                            handleSaveProfile();
+                          } else {
+                            toast.error(
+                              "Please fill all fields before saving."
+                            );
+                          }
                         }}
-                        className="rounded bg-green-600 px-3 py-1 text-white hover:bg-green-700"
+                        disabled={!isFormComplete()}
+                        className={`rounded px-3 py-1 text-white ${
+                          isFormComplete()
+                            ? "bg-green-600 hover:bg-green-700"
+                            : "bg-gray-400 cursor-not-allowed"
+                        }`}
                       >
                         Save
                       </button>

@@ -1,4 +1,5 @@
 import React from "react";
+import getTextColorFromBg from "../../utils/getTextColorFromBg";
 
 const BlockCardPreview = ({
   sr = "-",
@@ -25,6 +26,7 @@ const BlockCardPreview = ({
 
   const hueLabel = parsedHue?.label?.replace("bg-", "") || "N/A";
   const backgroundColor = parsedHue?.color || "#D1D5DB"; // fallback to gray-300
+  const textColor = getTextColorFromBg(backgroundColor); // Now backgroundColor is ready!
 
   return (
     <div className="w-full max-w-md mx-auto bg-white border-2 border-gray-300 rounded-lg shadow-md">
@@ -57,7 +59,9 @@ const BlockCardPreview = ({
         <div className="text-sm text-gray-700 mb-2">
           <strong>Gas:</strong>{" "}
           <span className="text-green-500 font-mono">
-            {Number(gas).toFixed(6)}
+            {gas !== undefined && gas !== null && !isNaN(gas)
+              ? Number(gas).toFixed(6)
+              : "N/A"}
           </span>
         </div>
 
@@ -68,16 +72,15 @@ const BlockCardPreview = ({
           </span>
         </div>
 
-        <div className="text-sm text-gray-700 mb-2">
-          <strong>Hue:</strong>{" "}
-          <span
-            className={`px-2 py-0.5 rounded text-xs font-mono ${
-              parsedHue?.label || "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {hueLabel}
-          </span>
-        </div>
+        <span
+          className="px-2 py-0.5 rounded text-xs font-mono"
+          style={{
+            backgroundColor: parsedHue.color || "#E5E7EB",
+            color: textColor,
+          }}
+        >
+          {hueLabel}
+        </span>
 
         <div className="text-sm bg-gray-50 text-gray-800 p-2 rounded border border-gray-200 mt-2">
           <strong>Data:</strong>{" "}

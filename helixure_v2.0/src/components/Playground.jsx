@@ -95,7 +95,13 @@ const Playground = () => {
                 <button
                   key={label}
                   onClick={() => setFilter(label)}
-                  className="border border-gray-300 dark:border-gray-600 px-4 py-1.5 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className={`border border-gray-300 dark:border-gray-600 px-4 py-1.5 rounded-md text-sm
+        ${
+          filter === label
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-white"
+            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+        }
+      `}
                 >
                   {label}
                 </button>
@@ -267,7 +273,7 @@ const Playground = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-4 p-5 w-full max-w-6xl">
-                {cards.map((card, index) => (
+                {filteredCards.map((card, index) => (
                   <div
                     key={index}
                     className="w-full bg-white border border-gray-200 rounded-lg shadow-sm flex justify-between items-center p-4 space-x-4 dark:bg-gray-800 dark:border-gray-700"

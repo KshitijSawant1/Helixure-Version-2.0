@@ -134,9 +134,17 @@ const InstructionModal = ({ onClose }) => {
             </li>
             <li>
               For example, if today’s color is <strong>blue</strong>, earlier
-              blocks may appear as <code>blue-100</code>, while later ones
-              deepen to <code>blue-900</code>.
+              blocks may appear as
+              <span className="inline-block bg-blue-100 text-blue-900 font-mono px-1 rounded ml-1">
+                blue-100
+              </span>
+              , while later ones deepen to
+              <span className="inline-block bg-blue-900 text-blue-100 font-mono px-1 rounded ml-1">
+                blue-900
+              </span>
+              .
             </li>
+
             <li>
               This creates a <strong>visual trail of time</strong>, helping you
               distinguish when blocks were created — at a glance.
@@ -317,6 +325,86 @@ const InstructionModal = ({ onClose }) => {
             <li>
               Revisit any previously created space and continue from where you
               left off.
+            </li>
+          </ul>
+        </div>
+      ),
+    },
+    {
+      title: "Card View",
+      content: (
+        <div className="space-y-4 text-left text-sm text-gray-700 dark:text-gray-200">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="text-3xl">
+              <svg
+                className="w-[37px] h-[37px] text-gray-800 dark:text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.414A2 2 0 0 0 20.414 6L18 3.586A2 2 0 0 0 16.586 3H5Zm10 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7V5h8v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>
+              <strong>Displays each block as a card</strong> for easy reading.
+            </li>
+            <li>
+              <strong>Shows key block details</strong> like title, hash, and gas
+              used.
+            </li>
+            <li>
+              <strong>Organized in a clean grid</strong> layout for clarity.
+            </li>
+            <li>
+              <strong>Best for reviewing entries individually</strong> at a
+              glance.
+            </li>
+            <li>
+              <strong>Ideal for quick scanning</strong> and copying data
+              manually.
+            </li>
+          </ul>
+        </div>
+      ),
+    },
+    {
+      title: "Flow View",
+      content: (
+        <div className="space-y-4 text-left text-sm text-gray-700 dark:text-gray-200">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="text-3xl">
+              <svg
+                className="w-[37px] h-[37px] text-gray-800 dark:text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 3a3 3 0 0 0-1 5.83v6.34a3.001 3.001 0 1 0 2 0V15a2 2 0 0 1 2-2h1a5.002 5.002 0 0 0 4.927-4.146A3.001 3.001 0 0 0 16 3a3 3 0 0 0-1.105 5.79A3.001 3.001 0 0 1 12 11h-1c-.729 0-1.412.195-2 .535V8.83A3.001 3.001 0 0 0 8 3Z" />
+              </svg>
+            </div>
+          </div>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>
+              <strong>Visualizes block connections</strong> as a linked chain.
+            </li>
+            <li>
+              <strong>Shows relationships</strong> between current and previous
+              hashes.
+            </li>
+            <li>
+              <strong>Dynamic layout</strong> that adjusts as you add blocks.
+            </li>
+            <li>
+              <strong>Great for understanding chain flow</strong> at a glance.
+            </li>
+            <li>
+              <strong>Interactive view</strong> supporting zoom, pan, and hover.
             </li>
           </ul>
         </div>
