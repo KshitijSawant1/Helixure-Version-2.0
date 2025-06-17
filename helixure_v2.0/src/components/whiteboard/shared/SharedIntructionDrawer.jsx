@@ -1,30 +1,30 @@
 import React, { useState } from "react";
-import "./InstructionModal.css";
-import PoWShowcase from "./PoWShowcase";
-const InstructionModal = ({ onClose }) => {
-  const [step, setStep] = useState(0);
-
+import "../InstructionModal.css";
+import PoWShowcase from "../PoWShowcase";
+import SimpleCubeAnimation from "../../SimpleCubeAnimation";
+const SharedInstructionDrawer = ({ isOpen, onClose, showGas, toggleGas }) => {
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
   const steps = [
     {
-      title: "Welcome to Your Private Blockchain Whiteboard",
+      title: "Welcome to Your Shared Blockchain Whiteboard",
       content: (
         <div className="space-y-4 text-left">
           <ul className="list-disc pl-6 space-y-2 text-black dark:text-white text-sm">
             <li>
-              This is your private blockchain canvas – where every interaction
-              is logged and visualized as blocks.
+              This is your shared blockchain canvas — a collaborative space
+              where multiple users contribute blocks.
             </li>
             <li>
-              Each block represents a unique event, secured and chained together
-              immutably.
+              Each block records a unique action or idea, linked together in an
+              immutable chain visible to all collaborators.
             </li>
             <li>
-              Drag blocks, link them, and build your digital story – block by
-              block.
+              Drag blocks, link them, and build a collective digital narrative —
+              block by block, together.
             </li>
             <li>
-              This is more than just a whiteboard. It’s your decentralized
-              journal of thoughts, actions, and ideas.
+              It’s more than just a whiteboard. It’s a decentralized log of
+              teamwork, ideas, and contributions.
             </li>
           </ul>
 
@@ -33,13 +33,13 @@ const InstructionModal = ({ onClose }) => {
               {[0, 1, 2, 3].map((_, index) => (
                 <React.Fragment key={index}>
                   <div
-                    className="w-10 h-10 rounded-md shadow-lg bg-gradient-to-br from-blue-400 to-cyan-300 wave-bounce"
+                    className="w-10 h-10 rounded-md shadow-lg bg-gradient-to-br from-green-400 to-emerald-300 wave-bounce"
                     style={{
                       animationDelay: `${index * 0.2}s`,
                     }}
                   ></div>
                   {index < 3 && (
-                    <div className="h-1 w-6 rounded-full bg-gradient-to-r from-cyan-300 to-blue-400 animate-wave-link" />
+                    <div className="h-1 w-6 rounded-full bg-gradient-to-r from-emerald-300 to-green-400 animate-wave-link" />
                   )}
                 </React.Fragment>
               ))}
@@ -104,7 +104,7 @@ const InstructionModal = ({ onClose }) => {
           </ul>
 
           <div className="flex justify-center mt-6">
-            {step === 2 && <PoWShowcase />}
+            <PoWShowcase />
           </div>
         </div>
       ),
@@ -233,30 +233,25 @@ const InstructionModal = ({ onClose }) => {
       ),
     },
     {
-      title: "Creating & Connecting Blocks",
+      title: "Creating & Linking Blocks",
       content: (
         <div className="space-y-4 text-left">
           <ul className="list-disc pl-6 space-y-2 text-black dark:text-white text-sm">
             <li>
-              You can <strong>drag blocks</strong> anywhere within the space —
-              arrange them however it fits your workflow.
+              In a <strong>shared space</strong>, users can create new blocks
+              collaboratively.
             </li>
             <li>
-              To <strong>link blocks</strong>, click on one block to start a
-              connection and then click on another to complete the link.
+              Each block is <strong>hashed</strong> upon creation, securing its
+              contents and linking it cryptographically to the previous block.
             </li>
             <li>
-              Connections are visualized as arrows, allowing you to represent{" "}
-              <strong>flows</strong>, <strong>dependencies</strong>, or{" "}
-              <strong>ideas</strong>.
+              Blocks are automatically linked as part of the blockchain sequence
+              after being hashed, forming an immutable chain.
             </li>
             <li>
-              You can create simple <strong>linear sequences</strong> or more
-              complex <strong>networks</strong> of blocks.
-            </li>
-            <li>
-              It’s a powerful way to visualize your thoughts, tasks, or
-              structured processes.
+              This ensures transparency and trust, as all participants can see
+              the chain of validated blocks.
             </li>
           </ul>
 
@@ -310,6 +305,153 @@ const InstructionModal = ({ onClose }) => {
       ),
     },
     {
+      title: "Adding Supplementary Links",
+      content: (
+        <div className="space-y-4 text-left">
+          <ul className="list-disc pl-6 space-y-2 text-black dark:text-white text-sm">
+            <li>
+              Supplementary links enable the creation of{" "}
+              <strong>meaningful task connections</strong> between blocks that
+              go beyond the standard blockchain hashing.
+            </li>
+            <li>
+              In a shared space, users can establish{" "}
+              <strong>link cycles</strong> (for example, A → B → C → A) to
+              represent task dependencies or feedback loops.
+            </li>
+            <li>
+              To define a supplementary link, select a{" "}
+              <strong>start block</strong> and an <strong>end block</strong>{" "}
+              that represent the relationship.
+            </li>
+            <li>
+              These links provide a clear visual mapping of task flows,
+              dependencies, and external contextual relationships within the
+              shared environment.
+            </li>
+          </ul>
+          <SimpleCubeAnimation />
+        </div>
+      ),
+    },
+    {
+      title: "User Role Control",
+      content: (
+        <div className="relative w-full max-w-lg bg-white rounded p-6 space-y-4 shadow">
+          <div className="space-y-6 text-left text-sm text-black dark:text-white">
+            <div>
+              <h3 className="font-bold text-blue-600">Owner</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  The <strong>Owner</strong> has full administrative control
+                  over the shared space.
+                </li>
+                <li>
+                  Can create, link, edit, and delete any block in the
+                  environment.
+                </li>
+                <li>
+                  Has the authority to manage user roles, assign permissions,
+                  and configure settings.
+                </li>
+                <li>
+                  Responsible for maintaining the integrity and structure of the
+                  shared space.
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-green-600">Editor</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  The <strong>Editor</strong> can create new blocks and
+                  establish links between them.
+                </li>
+                <li>
+                  Has permission to update or modify existing links and block
+                  details where applicable.
+                </li>
+                <li>
+                  <strong>Cannot delete</strong> any block or alter user roles.
+                </li>
+                <li>
+                  Supports the collaborative building and structuring of the
+                  space without risk of data loss through deletion.
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-purple-600">Viewer</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  The <strong>Viewer</strong> has read-only access to the shared
+                  space.
+                </li>
+                <li>
+                  Can view all blocks, their relationships, and the overall
+                  structure.
+                </li>
+                <li>
+                  <strong>Cannot create, link, edit, or delete</strong> any
+                  block.
+                </li>
+                <li>
+                  Ideal for stakeholders or participants who need insight
+                  without making changes.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Toggle between Viewer and Editor */}
+          <div className="flex items-center justify-center mt-4 space-x-2">
+            {/* Viewer Label */}
+            <span className="text-sm font-medium text-purple-600 text-center">
+              Viewer
+            </span>
+
+            {/* Toggle Switch */}
+            <label className="inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" />
+              <div
+                className="relative w-14 h-7 bg-gray-200 rounded-full dark:bg-gray-700 
+                 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 
+                 dark:peer-focus:ring-blue-800 
+                 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 
+                 peer-checked:after:translate-x-full 
+                 rtl:peer-checked:after:-translate-x-full 
+                 peer-checked:after:border-white 
+                 after:content-[''] after:absolute after:top-0.5 after:start-[4px] 
+                 after:bg-white after:border-gray-300 dark:border-gray-600 
+                 after:border after:rounded-full after:h-6 after:w-6 
+                 after:transition-all"
+              ></div>
+            </label>
+
+            {/* Editor Label */}
+            <span className="text-sm font-medium text-green-600 text-center">
+              Editor
+            </span>
+          </div>
+
+          {/* Role badges */}
+          <div className="flex justify-center space-x-2 mt-4">
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+              Owner
+            </span>
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded">
+              Editor
+            </span>
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+              Viewer
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
       title: "Save, Export, and Revisit",
       content: (
         <div className="space-y-4 text-left">
@@ -327,6 +469,74 @@ const InstructionModal = ({ onClose }) => {
               left off.
             </li>
           </ul>
+        </div>
+      ),
+    },
+    {
+      title: "Chat and Log Registry",
+      content: (
+        <div className="space-y-4 text-left">
+          {/* Chat explanation */}
+          <div className="space-y-2">
+            <h4 className="text-md font-semibold text-blue-600">Chat</h4>
+            <ul className="list-disc pl-6 text-sm text-black dark:text-white space-y-1">
+              <li>
+                The chat feature allows <strong>real-time communication</strong>{" "}
+                between users within the shared space.
+              </li>
+              <li>
+                It supports{" "}
+                <strong>collaboration, discussion, and clarification</strong>{" "}
+                directly within the environment.
+              </li>
+              <li>
+                Conversations are private to the members of the space and aid in{" "}
+                <strong>coordinated task execution</strong>.
+              </li>
+            </ul>
+          </div>
+
+          {/* Log Registry explanation */}
+          <div className="space-y-2">
+            <h4 className="text-md font-semibold text-green-600">
+              Log Registry
+            </h4>
+            <ul className="list-disc pl-6 text-sm text-black dark:text-white space-y-1">
+              <li>
+                The log registry functions as a <strong>notary system</strong>{" "}
+                recording all significant actions within the space.
+              </li>
+              <li>
+                It tracks events such as{" "}
+                <strong>
+                  user additions or removals, role changes, block creation, and
+                  supplementary link additions
+                </strong>
+                .
+              </li>
+              <li>
+                The registry provides an <strong>immutable audit trail</strong>{" "}
+                for accountability, security, and review purposes.
+              </li>
+              <li>
+                Authorized users can <strong>view, filter, or export</strong>{" "}
+                logs as needed for compliance or analysis.
+              </li>
+            </ul>
+          </div>
+
+          {/* Optional role badges for log access levels */}
+          <div className="flex justify-center space-x-2 mt-4">
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+              Owner: Full log + chat control
+            </span>
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded">
+              Editor: Chat + view own actions
+            </span>
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+              Viewer: Read-only chat + logs
+            </span>
+          </div>
         </div>
       ),
     },
@@ -496,86 +706,114 @@ const InstructionModal = ({ onClose }) => {
     },
   ];
 
-  const nextStep = () => {
-    if (step < steps.length - 1) setStep(step + 1);
-    else onClose();
-  };
-
-  const prevStep = () => {
-    if (step > 0) setStep(step - 1);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-center backdrop-blur-sm bg-black/30 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg md:w-[700px] p-4 md:p-6 shadow-lg flex flex-col space-y-4">
-        {/* Header */}
-        <div className="flex justify-between items-start ">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
-            {steps[step].title}
+    isOpen && (
+      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm flex">
+        <div className="w-[26rem] h-screen bg-white/90 dark:bg-gray-900/90 shadow-lg overflow-y-auto overflow-x-hidden transition-transform p-6 space-y-6 relative">
+          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-100">
+            INSTRUCTIONS
           </h2>
           <button
             onClick={onClose}
-            disabled={step !== steps.length - 1}
-            className={`text-lg ${
-              step === steps.length - 1
-                ? "text-red-400 hover:text-red-600"
-                : "text-gray-300 cursor-not-allowed"
-            }`}
-            title={
-              step === steps.length - 1
-                ? "Close"
-                : "Complete all steps to close"
-            }
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            aria-label="Close Instructions"
           >
             ✕
           </button>
-        </div>
-
-        <hr className="h-px bg-gray-300 border-0 dark:bg-gray-600 mb-2" />
-
-        {/* Body */}
-        <div className="text-sm text-gray-700 dark:text-gray-200 mb-6 overflow-y-auto">
-          {typeof steps[step].content === "string" ? (
-            <p>{steps[step].content}</p>
-          ) : (
-            steps[step].content
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-between items-center">
-          <button
-            onClick={prevStep}
-            disabled={step === 0}
-            className={`px-4 py-2 rounded text-sm ${
-              step === 0
-                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            Back
-          </button>
-
-          <div className="flex items-center gap-3">
-            {step === 0 && (
-              <button
-                onClick={() => setStep(steps.length - 1)}
-                className="px-4 py-2 text-sm bg-blue-100 text-blue-700 border border-blue-300 rounded hover:bg-blue-200"
-              >
-                Skip to End
-              </button>
-            )}
+          {/* Dropdown */}
+          <div className="relative">
             <button
-              onClick={nextStep}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => setDropdownOpen((prev) => !prev)}
+              aria-expanded={isDropdownOpen}
+              aria-controls="drawer-dropdown"
+              className="mb-5 text-white bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-300 font-medium rounded-md text-sm px-4 py-2.5 flex items-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {step === steps.length - 1 ? "Finish" : "Next"}
+              Dropdown
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
+
+            {isDropdownOpen && (
+              <div className="relative overflow-x-auto bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-md">
+                  <thead className="text-xs text-gray-700 uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                      <th scope="col" className="px-6 py-3">
+                        Title
+                      </th>
+                      <th scope="col" className="px-6 py-3">
+                        Traverse
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="drawer-dropdown">
+                    {steps.map((step, index) => (
+                      <tr
+                        key={index}
+                        className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200"
+                      >
+                        <th
+                          scope="row"
+                          className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-[180px] truncate"
+                          title={step.title} // Optional: tooltip to show full title on hover
+                        >
+                          {step.title}
+                        </th>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(
+                                `step-${index}`
+                              );
+                              if (el) {
+                                el.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                });
+                                setDropdownOpen(false);
+                              }
+                            }}
+                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-200 dark:bg-blue-500 dark:hover:bg-blue-600"
+                          >
+                            Go
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
+
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-md shadow-sm text-sm">
+            <strong>Tip:</strong> Use this guide to explore the blockchain
+            whiteboard features. Click any section to get started!
+          </div>
+          {steps.map((step, index) => (
+            <div key={index} id={`step-${index}`} className="border-b pb-6">
+              <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                {step.title}
+              </h3>
+              <div>{step.content}</div>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    )
   );
 };
 
-export default InstructionModal;
+export default SharedInstructionDrawer;

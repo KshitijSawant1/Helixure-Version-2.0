@@ -18,7 +18,7 @@ const colorMap = {
 
 const colors = Object.keys(colorMap);
 
-const EditSpaceForm = ({ spaceId, onUpdated }) => {
+const EditSpaceForm = ({ spaceId, onUpdated, isShared = false }) => {
   const [spaceName, setSpaceName] = useState("");
   const [description, setDescription] = useState("");
   const [spaceType, setSpaceType] = useState("Shared");
@@ -28,8 +28,10 @@ const EditSpaceForm = ({ spaceId, onUpdated }) => {
     if (!spaceId) return;
 
     const fetchSpace = async () => {
+      const table = isShared ? "shared_playground" : "playground";
+
       const { data, error } = await supabase
-        .from("playground")
+        .from(table)
         .select("*")
         .eq("id", spaceId)
         .single();
@@ -106,15 +108,15 @@ const EditSpaceForm = ({ spaceId, onUpdated }) => {
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
       <div>
         <label
-          for="website-admin"
-          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          htmlFor="website-admin"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
         >
           Space Title
         </label>
-        <div class="flex">
-          <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border rounded-e-0 border-gray-300 border-e-0 rounded-s-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
+        <div className="flex">
+          <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border rounded-e-0 border-gray-300 border-e-0 rounded-s-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
             <svg
-              class="w-6 h-6 text-gray-800 dark:text-white"
+              className="w-6 h-6 text-gray-800 dark:text-white"
               aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -124,9 +126,9 @@ const EditSpaceForm = ({ spaceId, onUpdated }) => {
             >
               <path
                 stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
                 d="m17 21-5-4-5 4V3.889a.92.92 0 0 1 .244-.629.808.808 0 0 1 .59-.26h8.333a.81.81 0 0 1 .589.26.92.92 0 0 1 .244.63V21Z"
               />
             </svg>
@@ -137,15 +139,15 @@ const EditSpaceForm = ({ spaceId, onUpdated }) => {
             required
             value={spaceName}
             onChange={(e) => setSpaceName(e.target.value)}
-            class="rounded-none rounded-e-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            className="rounded-none rounded-e-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
         </div>
       </div>
 
       <div>
         <label
-          for="message"
-          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          htmlFor="message"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
         >
           Space Title
         </label>
@@ -154,7 +156,7 @@ const EditSpaceForm = ({ spaceId, onUpdated }) => {
           rows="4"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         ></textarea>
       </div>
 
@@ -182,9 +184,9 @@ const EditSpaceForm = ({ spaceId, onUpdated }) => {
       <div className="pt-4">
         <button
           type="submit"
-          class="w-full relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-green-400 to-blue-600 group-hover:from-green-400 group-hover:to-blue-600 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800"
+          className="w-full relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-green-400 to-blue-600 group-hover:from-green-400 group-hover:to-blue-600 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800"
         >
-          <span class="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+          <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
             Save Changes
           </span>
         </button>

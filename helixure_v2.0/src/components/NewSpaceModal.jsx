@@ -15,6 +15,9 @@ const colorMap = {
 };
 
 const colors = Object.keys(colorMap);
+const generate7DigitCode = () => {
+  return Math.floor(1000000 + Math.random() * 9000000).toString();
+};
 
 const NewSpaceModal = ({ isOpen, onClose, onCreated }) => {
   const [spaceName, setSpaceName] = useState("");
@@ -47,26 +50,69 @@ const NewSpaceModal = ({ isOpen, onClose, onCreated }) => {
     }
 
     const finalColors = [colorMap[chosen[0]][0], colorMap[chosen[1]][1]];
+    const user = (await supabase.auth.getUser()).data.user;
 
-    const { data, error } = await supabase.from("playground").insert([
-      {
+    let table, insertData;
+
+    if (spaceType === "Private") {
+      table = "playground";
+      insertData = {
         title: spaceName,
         description,
         type: spaceType,
         color1: finalColors[0],
         color2: finalColors[1],
-        user_id: (await supabase.auth.getUser()).data.user.id,
-      },
-    ]);
+        user_id: user.id,
+      };
+    } else {
+      table = "shared_playground";
+      const inviteCode = generate7DigitCode();
+
+      insertData = {
+        title: spaceName,
+        description,
+        color1: finalColors[0],
+        color2: finalColors[1],
+        owner: user.id,
+        invite_code: inviteCode,
+        code_generated_at: new Date().toISOString(),
+        last_invite_action_at: new Date().toISOString(),
+        invite_expiry_minutes: 60, // Default expiry: 60 mins
+        invite_status: "active",
+        type: "shared",
+      };
+    }
+
+    const { data, error } = await supabase
+      .from(table)
+      .insert([insertData])
+      .select()
+      .single();
 
     if (error) {
       alert("Error creating space: " + error.message);
       return;
     }
+
+    if (spaceType === "Shared" && data?.id) {
+      // Insert owner as a member
+      const { error: memberError } = await supabase
+        .from("shared_playground_members")
+        .insert({
+          space_id: data.id,
+          user_id: user.id,
+          role: "Owner",
+        });
+
+      if (memberError) {
+        console.error("Failed to insert owner as member:", memberError.message);
+        toast.error("Owner membership creation failed");
+      }
+    }
+
     toast.success("Space created successfully!");
     if (onCreated) onCreated();
-
-    onClose(); // close modal
+    onClose();
     setSpaceName("");
     setDescription("");
     setSpaceType("Shared");

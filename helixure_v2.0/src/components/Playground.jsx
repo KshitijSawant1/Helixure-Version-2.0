@@ -1,33 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { FaBars, FaTh, FaCheck } from "react-icons/fa";
 import { toast } from "react-toastify";
-import testimage from "../assets/testimage.png";
 import NewSpaceModal from "./NewSpaceModal";
+import JoinSpaceModal from "./whiteboard/JoinSpaceModal";
 import { supabase } from "../supabaseClient";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Playground = () => {
   const [loading, setLoading] = useState(true);
   const [cards, setCards] = useState([]);
   const [view, setView] = useState("grid");
   const [showModal, setShowModal] = useState(false);
-
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [filter, setFilter] = useState("All");
+
+  const navigate = useNavigate();
+
   const filteredCards = cards.filter((card) => {
     if (filter === "All") return true;
     if (filter === "Private") return card.type === "Private";
     if (filter === "Shared") return card.type === "Shared";
   });
-
-  const location = useLocation();
-  const navigate = useNavigate();
-  const handleOpenWhiteboard = (spaceId) => {
-    navigate("/whiteboard", {
-      state: {
-        spaceId: spaceId, // Pass the spaceId of the selected space
-      },
-    });
-  };
 
   const handleExploreClick = (id) => {
     navigate("/whiteboard", {
@@ -39,35 +32,114 @@ const Playground = () => {
 
   const fetchSpaces = async () => {
     setLoading(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
-      .from("playground")
-      .select("*")
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Fetch error:", error);
-      toast.error("Error fetching spaces");
+    if (!user) {
+      toast.error("User not authenticated.");
       setLoading(false);
       return;
     }
 
-    const resolved = data.map((card) => ({
-      id: card.id,
-      title: card.title,
-      description: card.description,
-      type: card.type,
-      to: "#",
-      image: testimage,
-      colors: [card.color1, card.color2],
-    }));
+    try {
+      // 1️⃣ Fetch private spaces
+      const { data: privateSpaces, error: privateError } = await supabase
+        .from("playground")
+        .select("*")
+        .eq("user_id", user.id);
 
-    setCards(resolved);
-    setLoading(false);
+      // 2️⃣ Fetch owned shared spaces
+      const { data: ownedSharedSpaces, error: ownedSharedError } =
+        await supabase
+          .from("shared_playground")
+          .select("*")
+          .eq("owner", user.id);
+
+      // 3️⃣ Fetch memberships
+      const { data: memberships, error: membershipError } = await supabase
+        .from("shared_playground_members")
+        .select("space_id")
+        .eq("user_id", user.id);
+
+      if (privateError || ownedSharedError || membershipError) {
+        console.error(
+          "Fetch error:",
+          privateError || ownedSharedError || membershipError
+        );
+        toast.error("Error fetching spaces");
+        setLoading(false);
+        return;
+      }
+
+      const spaceIds = memberships?.map((m) => m.space_id) || [];
+
+      // 4️⃣ Fetch shared spaces where the user is a member (excluding owned ones)
+      let memberSharedSpaces = [];
+      if (spaceIds.length > 0) {
+        const { data: memberSpaces, error: memberError } = await supabase
+          .from("shared_playground")
+          .select("*")
+          .in("id", spaceIds);
+
+        if (memberError) {
+          console.error("Fetch member spaces error:", memberError);
+          toast.error("Error fetching shared member spaces");
+        } else {
+          const ownedIds = new Set(ownedSharedSpaces.map((s) => s.id));
+          memberSharedSpaces = memberSpaces.filter((s) => !ownedIds.has(s.id));
+        }
+      }
+
+      // 5️⃣ Map to cards
+      const privateCards = (privateSpaces || []).map((card) => ({
+        id: card.id,
+        title: card.title,
+        description: card.description,
+        type: "Private",
+        created_at: card.created_at,
+        colors: [card.color1, card.color2],
+      }));
+
+      const ownedSharedCards = (ownedSharedSpaces || []).map((card) => ({
+        id: card.id,
+        title: card.title,
+        description: card.description,
+        type: "Shared",
+        created_at: card.created_at,
+        colors: [card.color1, card.color2],
+      }));
+
+      const memberSharedCards = (memberSharedSpaces || []).map((card) => ({
+        id: card.id,
+        title: card.title,
+        description: card.description,
+        type: "Shared",
+        created_at: card.created_at,
+        colors: [card.color1, card.color2],
+      }));
+
+      // 6️⃣ Combine + sort
+      const combined = [
+        ...privateCards,
+        ...ownedSharedCards,
+        ...memberSharedCards,
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setCards(combined);
+
+      if (combined.length === 0) {
+        toast.info("No spaces found. Join or create a space to get started!");
+      }
+    } catch (err) {
+      console.error("Unexpected fetch error:", err);
+      toast.error("An unexpected error occurred while fetching spaces.");
+    } finally {
+      setLoading(false);
+    }
   };
+
   useEffect(() => {
     fetchSpaces();
   }, []);
@@ -112,11 +184,19 @@ const Playground = () => {
             <div className="flex items-center gap-3 flex-wrap justify-center md:justify-end">
               {/* Create Button */}
               <button
+                onClick={() => setShowJoinModal(true)}
+                className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-cyan-500 to-blue-500 group-hover:from-cyan-500 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
+              >
+                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                  Join A Space
+                </span>
+              </button>
+              <button
                 onClick={() => setShowModal(true)}
                 className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-cyan-500 to-blue-500 group-hover:from-cyan-500 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
               >
                 <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                  Create a new space
+                  Create A New Space
                 </span>
               </button>
 
@@ -152,6 +232,13 @@ const Playground = () => {
           isOpen={showModal}
           onClose={() => {
             setShowModal(false);
+            fetchSpaces();
+          }}
+        />
+        <JoinSpaceModal
+          isOpen={showJoinModal}
+          onClose={() => {
+            setShowJoinModal(false);
             fetchSpaces();
           }}
         />

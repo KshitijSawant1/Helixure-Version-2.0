@@ -428,7 +428,7 @@ const InstructionDrawer = ({
           <div className="flex flex-col items-center space-y-2">
             <div className="text-yellow-500 dark:text-yellow-400 text-3xl">
               <svg
-                class="w-[37px] h-[37px] text-gray-800 dark:text-white"
+                className="w-[37px] h-[37px] text-gray-800 dark:text-white"
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -438,9 +438,9 @@ const InstructionDrawer = ({
               >
                 <path
                   stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="M5.005 11.19V12l6.998 4.042L19 12v-.81M5 16.15v.81L11.997 21l6.998-4.042v-.81M12.003 3 5.005 7.042l6.998 4.042L19 7.042 12.003 3Z"
                 />
               </svg>
@@ -496,23 +496,6 @@ const InstructionDrawer = ({
             <li>
               You can revisit this instructional guide anytime by clicking the
               Help icon at the botton navigation tab
-              <svg
-                className="w-6 h-6 text-gray-800 dark:text-white"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
             </li>
           </ul>
 
@@ -596,7 +579,7 @@ const InstructionDrawer = ({
             </label>
           </div>
 
-          <hr class="w-full h-1 my-4 bg-gray-300 border-0 rounded-sm dark:bg-gray-700" />
+          <hr className="w-full h-1 my-4 bg-gray-300 border-0 rounded-sm dark:bg-gray-700" />
 
           <h2 className="text-xl font-bold text-gray-700 dark:text-gray-100">
             INSTRUCTIONS
