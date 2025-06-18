@@ -708,7 +708,7 @@ const SharedInstructionDrawer = ({ isOpen, onClose, showGas, toggleGas }) => {
 
   return (
     isOpen && (
-      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm flex">
+      <div className="fixed  z-[1000] inset-0 z-40 bg-black/30 backdrop-blur-sm flex">
         <div className="w-[26rem] h-screen bg-white/90 dark:bg-gray-900/90 shadow-lg overflow-y-auto overflow-x-hidden transition-transform p-6 space-y-6 relative">
           <h2 className="text-xl font-bold text-gray-700 dark:text-gray-100">
             INSTRUCTIONS

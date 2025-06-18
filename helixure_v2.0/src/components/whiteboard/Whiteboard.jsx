@@ -13,6 +13,7 @@ import EditSpace from "./shared/EditSpace";
 import { supabase } from "../../supabaseClient";
 import BlockFlow from "./BlockFlow";
 import { ReactFlowProvider } from "reactflow";
+import ChatLog from "./shared/ChatLog";
 
 const Whiteboard = () => {
   const location = useLocation();
@@ -693,7 +694,12 @@ const Whiteboard = () => {
                       prev === "create" ? null : "create"
                     )
                   }
-                  className="inline-flex items-center justify-center w-10 h-10 font-medium bg-blue-600 rounded-full hover:bg-blue-700 group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800"
+                  className={`inline-flex items-center justify-center w-10 h-10 font-medium ${
+                    userRole === "Viewer"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  } rounded-full group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800`}
+                  disabled={userRole === "Viewer"}
                 >
                   <svg
                     className="w-4 h-4 text-white"
@@ -731,7 +737,12 @@ const Whiteboard = () => {
                       prev === "create" ? null : "create"
                     )
                   }
-                  className="inline-flex items-center justify-center w-10 h-10 font-medium bg-blue-600 rounded-full hover:bg-blue-700 group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800"
+                  className={`inline-flex items-center justify-center w-10 h-10 font-medium ${
+                    userRole === "Viewer"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  } rounded-full group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800`}
+                  disabled={userRole === "Viewer"}
                 >
                   <svg
                     className="w-6 h-6 text-white dark:text-white"
@@ -813,7 +824,7 @@ const Whiteboard = () => {
               <button
                 data-tooltip-target="tooltip-shared-chat"
                 type="button"
-                onClick={() => togglePanel("search")}
+                onClick={() => setActivePanel("shared-chat")}
                 className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
               >
                 <svg
@@ -921,7 +932,11 @@ const Whiteboard = () => {
         showGas={showGas}
         toggleGas={handleToggleGas}
       />
-
+      <ChatLog
+        isOpen={activePanel === "shared-chat"}
+        onClose={() => setActivePanel(null)}
+        spaceId={spaceId} // if needed by your ChatLog
+      />
       {showInstructionModal && (
         <InstructionModal onClose={() => setShowInstructionModal(false)} />
       )}
