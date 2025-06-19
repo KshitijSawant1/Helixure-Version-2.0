@@ -627,7 +627,7 @@ const SharedInstructionDrawer = ({ isOpen, onClose, showGas, toggleGas }) => {
           <div className="flex flex-col items-center space-y-2">
             <div className="text-yellow-500 dark:text-yellow-400 text-3xl">
               <svg
-                class="w-[37px] h-[37px] text-gray-800 dark:text-white"
+                className="w-[37px] h-[37px] text-gray-800 dark:text-white"
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -637,9 +637,9 @@ const SharedInstructionDrawer = ({ isOpen, onClose, showGas, toggleGas }) => {
               >
                 <path
                   stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="M5.005 11.19V12l6.998 4.042L19 12v-.81M5 16.15v.81L11.997 21l6.998-4.042v-.81M12.003 3 5.005 7.042l6.998 4.042L19 7.042 12.003 3Z"
                 />
               </svg>

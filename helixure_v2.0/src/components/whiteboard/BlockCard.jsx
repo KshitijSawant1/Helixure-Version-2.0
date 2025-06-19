@@ -31,27 +31,26 @@ const BlockCard = ({
   const [isDragging, setIsDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
 
-let hueColorParsed = {
-  label: "Default",
-  borderLabel: "border-gray-400",
-  color: "#9CA3AF",
-};
+  let hueColorParsed = {
+    label: "Default",
+    borderLabel: "border-gray-400",
+    color: "#9CA3AF",
+  };
 
-try {
-  hueColorParsed =
-    typeof hue_color === "string" && hue_color.includes("{")
-      ? JSON.parse(hue_color)
-      : typeof hue_color === "object"
-      ? hue_color
-      : {
-          label: hue_color,
-          borderLabel: "border-gray-400",
-          color: "#9CA3AF", // fallback HEX
-        };
-} catch (err) {
-  console.warn("Failed to parse hue_color:", hue_color);
-}
-
+  try {
+    hueColorParsed =
+      typeof hue_color === "string" && hue_color.includes("{")
+        ? JSON.parse(hue_color)
+        : typeof hue_color === "object"
+        ? hue_color
+        : {
+            label: hue_color,
+            borderLabel: "border-gray-400",
+            color: "#9CA3AF", // fallback HEX
+          };
+  } catch (err) {
+    console.warn("Failed to parse hue_color:", hue_color);
+  }
 
   const {
     label: hue_color_label,
@@ -144,6 +143,7 @@ try {
       style={{
         ...(isFlowMode ? {} : { left: `${x}px`, top: `${y}px` }),
         borderColor: fallbackColor,
+        height: "305px",
       }}
     >
       <div
@@ -155,7 +155,9 @@ try {
         <h2 className="text-lg font-bold mb-1">Block {sr}</h2>
         <div className="mb-2">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <p className="text-xs text-gray-600 mt-0.5">{description}</p>
+          <p className="text-xs text-gray-600 mt-0.5 break-words line-clamp-3">
+            {description}
+          </p>
         </div>
 
         <div className="text-xs mb-2">

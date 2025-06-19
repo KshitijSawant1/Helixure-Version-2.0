@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { supabase } from "../supabaseClient";
 import { toast } from "react-toastify";
+import { registerLog } from "../utils/logUtils";
+
 const colorMap = {
   gray: ["from-gray-700", "to-gray-700", "bg-gray-700"],
   lblue: ["from-blue-400", "to-blue-400", "bg-blue-400"],
@@ -109,6 +111,16 @@ const NewSpaceModal = ({ isOpen, onClose, onCreated }) => {
         toast.error("Owner membership creation failed");
       }
     }
+    // Register SPACE_CREATED log
+    await registerLog({
+      space_id: data.id,
+      user_id: user.id,
+      username: user.user_metadata
+        ? `${user.user_metadata.firstname} ${user.user_metadata.lastname}`
+        : "Unknown",
+      action: "SPACE_CREATED",
+      description: `Space "${spaceName}" created`,
+    });
 
     toast.success("Space created successfully!");
     if (onCreated) onCreated();

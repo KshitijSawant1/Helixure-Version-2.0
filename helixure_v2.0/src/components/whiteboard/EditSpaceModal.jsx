@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
 import { toast } from "react-toastify";
+import { registerLog } from "../../utils/logUtils";
 
 const colorMap = {
   gray: ["from-gray-700", "to-gray-700", "bg-gray-700"],
@@ -85,8 +86,26 @@ const EditSpaceForm = ({ spaceId, onUpdated, isShared = false }) => {
       data: { user },
     } = await supabase.auth.getUser();
 
+    const table = isShared ? "shared_playground" : "playground";
+    const matchCondition = isShared
+      ? { id: spaceId, owner: user.id }
+      : { id: spaceId, user_id: user.id };
+
+    // ✅ Fetch previous data
+    const { data: prevData, error: fetchError } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", spaceId)
+      .single();
+
+    if (fetchError || !prevData) {
+      toast.error("Could not fetch previous data");
+      return;
+    }
+
+    // ✅ Update
     const { error } = await supabase
-      .from("playground")
+      .from(table)
       .update({
         title: spaceName,
         description,
@@ -94,14 +113,53 @@ const EditSpaceForm = ({ spaceId, onUpdated, isShared = false }) => {
         color1: finalColors[0],
         color2: finalColors[1],
       })
-      .match({ id: spaceId, user_id: user.id });
+      .match(matchCondition);
 
     if (error) {
       toast.error("Update failed: " + error.message);
-    } else {
-      toast.success("Space updated successfully!");
-      if (onUpdated) onUpdated();
+      return;
     }
+
+    // ✅ Register logs
+    const username = `${user.user_metadata?.firstname || ""} ${
+      user.user_metadata?.lastname || ""
+    }`.trim();
+
+    if (spaceName !== prevData.title) {
+      await supabase.from("space_log_table").insert({
+        space_id: spaceId,
+        user_id: user.id,
+        username,
+        action: "SPACE_EDITED",
+        description: `Title changed to "${spaceName}"`,
+      });
+    }
+
+    if (description !== prevData.description) {
+      await supabase.from("space_log_table").insert({
+        space_id: spaceId,
+        user_id: user.id,
+        username,
+        action: "SPACE_EDITED",
+        description: `Description changed.`,
+      });
+    }
+
+    if (
+      finalColors[0] !== prevData.color1 ||
+      finalColors[1] !== prevData.color2
+    ) {
+      await supabase.from("space_log_table").insert({
+        space_id: spaceId,
+        user_id: user.id,
+        username,
+        action: "SPACE_EDITED",
+        description: `Colors changed to ${finalColors[0]}, ${finalColors[1]}`,
+      });
+    }
+
+    toast.success("Space updated successfully!");
+    if (onUpdated) onUpdated();
   };
 
   return (

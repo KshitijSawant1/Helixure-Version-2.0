@@ -3,6 +3,8 @@ import { supabase } from "../../../supabaseClient";
 import ChatHeader from "./chatfiles/ChatHeader";
 import ChatMessage from "./chatfiles/ChatMessages";
 import ChatInput from "./chatfiles/ChatInput";
+import LogDrawer from "./chatfiles/LogDrawer";
+import { registerLog } from "../../../utils/logUtils";
 
 const ChatLog = ({ isOpen, onClose, spaceId }) => {
   const [activeTab, setActiveTab] = useState("chat");
@@ -34,7 +36,7 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
       if (!chatErr) setChatMessages(chatData);
 
       const { data: logData, error: logErr } = await supabase
-        .from("space_logs")
+        .from("space_log_table")
         .select("*")
         .eq("space_id", spaceId)
         .order("timestamp", { ascending: true });
@@ -44,26 +46,32 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
     loadInitialData();
 
     const chatSub = supabase
-      .channel("chat")
+      .channel(`chat-${spaceId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "space_chat_messages" },
         (payload) => {
           if (payload.new.space_id === spaceId) {
-            setChatMessages((prev) => [...prev, payload.new]);
+            setChatMessages((prev) => {
+              const exists = prev.some((m) => m.id === payload.new.id);
+              return exists ? prev : [...prev, payload.new];
+            });
           }
         }
       )
       .subscribe();
 
     const logSub = supabase
-      .channel("logs")
+      .channel(`logs-${spaceId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "space_logs" },
+        { event: "INSERT", schema: "public", table: "space_log_table" },
         (payload) => {
           if (payload.new.space_id === spaceId) {
-            setLogs((prev) => [...prev, payload.new]);
+            setLogs((prev) => {
+              const exists = prev.some((l) => l.id === payload.new.id);
+              return exists ? prev : [...prev, payload.new];
+            });
           }
         }
       )
@@ -98,23 +106,53 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
     }`.trim();
     const avatarUrl = profile?.avatarUrl || null;
 
-    const { error } = await supabase.from("space_chat_messages").insert({
+    const tempMsg = {
+      id: `temp-${Date.now()}`,
       space_id: spaceId,
       user_id: user.id,
       username,
       avatarUrl,
       message: msg.trim(),
-    });
+      timestamp: new Date().toISOString(),
+      temp: true,
+    };
+
+    setChatMessages((prev) => [...prev, tempMsg]);
+
+    const { data, error } = await supabase
+      .from("space_chat_messages")
+      .insert({
+        space_id: spaceId,
+        user_id: user.id,
+        username,
+        avatarUrl,
+        message: msg.trim(),
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error("Send message error:", error);
+      return;
     }
+
+    setChatMessages((prev) =>
+      prev.filter((m) => m.id !== tempMsg.id).concat(data)
+    );
+
+    await registerLog(
+      spaceId,
+      user.id,
+      username,
+      "CHAT_MESSAGE",
+      `Sent: ${msg.trim()}`
+    );
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed z-[1000] inset-0 z-40 bg-[#f3f8ff]/90 backdrop-blur-sm flex">
+    <div className="fixed z-[1000] inset-0 bg-[#f3f8ff]/90 backdrop-blur-sm flex">
       <div className="w-[26rem] h-screen bg-[#f3f8ff]/90 dark:bg-gray-900/90 shadow-lg overflow-y-auto flex flex-col">
         <ChatHeader onClose={onClose} />
 
@@ -132,7 +170,7 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
                   : "bg-transparent text-gray-900 dark:text-white"
               } rounded-l-md border-r border-gray-900 dark:border-white hover:bg-gray-900 hover:text-white dark:hover:bg-gray-700`}
             >
-              Chat
+              In Space Chat
             </button>
             <button
               type="button"
@@ -143,7 +181,7 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
                   : "bg-transparent text-gray-900 dark:text-white"
               } rounded-r-md hover:bg-gray-900 hover:text-white dark:hover:bg-gray-700`}
             >
-              Log
+              Activity Logs
             </button>
           </div>
         </div>
@@ -162,18 +200,15 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
               />
             ))}
 
-          {activeTab === "log" &&
-            logs.map((log) => (
-              <div
-                key={log.id}
-                className="text-sm text-gray-700 dark:text-gray-300"
-              >
-                <strong>{log.username}</strong> {log.action}
-                <div className="text-xs text-gray-400">
-                  {new Date(log.timestamp).toLocaleString()}
-                </div>
-              </div>
-            ))}
+          {activeTab === "log" && (
+            <LogDrawer
+              isOpen={true}
+              onClose={() => setActiveTab("chat")}
+              logs={logs}
+              spaceId={spaceId}
+              setLogs={setLogs}
+            />
+          )}
         </div>
 
         {activeTab === "chat" && (

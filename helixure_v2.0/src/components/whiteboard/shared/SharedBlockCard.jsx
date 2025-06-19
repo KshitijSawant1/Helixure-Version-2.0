@@ -1,6 +1,5 @@
-// src/components/whiteboard/BlockCard.jsx
 import React, { useRef, useEffect, useState } from "react";
-import getTextColorFromBg from "../../utils/getTextColorFromBg";
+import getTextColorFromBg from "../../../utils/getTextColorFromBg";
 
 const SharedBlockCard = ({
   id,
@@ -18,18 +17,21 @@ const SharedBlockCard = ({
   data = "Empty",
   timestamp = new Date().toISOString(),
   isFlowMode = false,
-  userName = "Anonymous", // 🆕 ADD THIS
-  userAvatar = "https://ui-avatars.com/api/?name=A", // 🆕 ADD THIS
-  userRole = "Viewer", // 🆕 ADD THIS
+  userName = "Anonymous",
+  userAvatar = null,
+  userRole = "Viewer",
   userDesignation = "Member",
 }) => {
-  const cardPositionStyle = isFlowMode
-    ? {}
-    : {
-        position: "absolute",
-        left: `${x}px`,
-        top: `${y}px`,
-      };
+  const avatarSrc =
+    userAvatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}`;
+
+  const roleStyle =
+    userRole === "Owner"
+      ? "bg-blue-100 text-blue-700"
+      : userRole === "Editor"
+      ? "bg-green-100 text-green-700"
+      : "bg-purple-100 text-purple-700";
 
   const cardRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -50,29 +52,21 @@ const SharedBlockCard = ({
         : {
             label: hue_color,
             borderLabel: "border-gray-400",
-            color: "#9CA3AF", // fallback HEX
+            color: "#9CA3AF",
           };
   } catch (err) {
     console.warn("Failed to parse hue_color:", hue_color);
   }
 
-  const {
-    label: hue_color_label,
-    borderLabel: borderColor,
-    color: fallbackColor,
-  } = hueColorParsed;
-
-  const badge = hue_color.replace("bg-", "bg-") + " text-gray-700";
-
-  // Safely extract tailwind classes
+  const { label: hue_color_label, color: fallbackColor } = hueColorParsed;
 
   const isOverlapping = (newX, newY) => {
-    const width = 288; // Tailwind w-72 in px
-    const height = 160; // Approximate height of card
+    const width = 288;
+    const height = 160;
     const padding = 2;
 
     return blocks.some((block) => {
-      if (block.id === id) return false; // Don’t compare with self
+      if (block.id === id) return false;
       return (
         newX < block.x + width + padding &&
         newX + width + padding > block.x &&
@@ -83,15 +77,11 @@ const SharedBlockCard = ({
   };
 
   useEffect(() => {
-    const card = cardRef.current;
-
     const onMouseMove = (e) => {
       if (!isDragging) return;
       const newX = e.clientX - offset.current.x;
       const newY = e.clientY - offset.current.y;
-      if (!isOverlapping(newX, newY)) {
-        updatePosition(id, newX, newY);
-      }
+      if (!isOverlapping(newX, newY)) updatePosition(id, newX, newY);
     };
 
     const onMouseUp = () => setIsDragging(false);
@@ -99,15 +89,12 @@ const SharedBlockCard = ({
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
 
-    // Optional: Add mobile support
     const onTouchMove = (e) => {
       if (!isDragging) return;
       const touch = e.touches[0];
       const newX = touch.clientX - offset.current.x;
       const newY = touch.clientY - offset.current.y;
-      if (!isOverlapping(newX, newY)) {
-        updatePosition(id, newX, newY);
-      }
+      if (!isOverlapping(newX, newY)) updatePosition(id, newX, newY);
     };
 
     const onTouchEnd = () => setIsDragging(false);
@@ -128,11 +115,7 @@ const SharedBlockCard = ({
     const rect = cardRef.current.getBoundingClientRect();
     const clientX = e.clientX || e.touches?.[0]?.clientX;
     const clientY = e.clientY || e.touches?.[0]?.clientY;
-
-    offset.current = {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-    };
+    offset.current = { x: clientX - rect.left, y: clientY - rect.top };
   };
 
   return (
@@ -147,6 +130,7 @@ const SharedBlockCard = ({
       style={{
         ...(isFlowMode ? {} : { left: `${x}px`, top: `${y}px` }),
         borderColor: fallbackColor,
+        height: "370px",
       }}
     >
       <div
@@ -158,7 +142,9 @@ const SharedBlockCard = ({
         <h2 className="text-lg font-bold mb-1">Block {sr}</h2>
         <div className="mb-2">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <p className="text-xs text-gray-600 mt-0.5">{description}</p>
+          <p className="text-xs text-gray-600 mt-0.5 break-words line-clamp-3">
+            {description}
+          </p>
         </div>
 
         <div className="text-xs mb-2">
@@ -198,33 +184,34 @@ const SharedBlockCard = ({
             {timestamp ? new Date(timestamp).toLocaleString() : "N/A"}
           </span>
         </div>
-
-        <div className="flex items-center space-x-2 mb-2">
+        <div className="flex items-center space-x-3 mb-2">
           <img
-            src={userAvatar}
+            src={avatarSrc}
             alt={userName}
-            className="w-6 h-6 rounded-sm border border-gray-300 shadow-sm object-cover"
+            className="w-12 h-12 rounded-lg border border-gray-300 shadow-sm object-cover"
           />
-          <div className="text-xs">
-            <span className="font-semibold text-gray-800">{userName}</span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-800 text-m">
+              {userName}
+            </span>
+            <span className="text-s text-gray-800">{userDesignation}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between mb-2 space-x-2">
+          {(userRole === "Owner" || userRole === "Editor") && (
             <span
-              className={`ml-1 px-1 py-0.5 rounded text-[10px] ${
+              className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
                 userRole === "Owner"
                   ? "bg-blue-100 text-blue-700"
-                  : userRole === "Editor"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-purple-100 text-purple-700"
+                  : "bg-green-100 text-green-700"
               }`}
             >
               {userRole}
             </span>
-            <div className="text-[10px] text-gray-500">{userDesignation}</div>
-          </div>
-        </div>
+          )}
 
-        <div className="flex items-center justify-between text-xs mb-2">
           <span
-            className="px-2 py-0.5 rounded-full text-[10px]"
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px]"
             style={{
               backgroundColor: fallbackColor,
               color: getTextColorFromBg(fallbackColor),

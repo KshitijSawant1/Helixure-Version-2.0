@@ -3,6 +3,7 @@ import EditSpaceForm from "../EditSpaceModal"; // Ensure this import is correct
 import InviteCodeGenerator from "./InviteCodeGenerator";
 import SpaceControlPanel from "./SpaceControlPanel";
 
+
 const EditSpace = ({
   isOpen,
   onClose,

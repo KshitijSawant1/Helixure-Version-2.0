@@ -14,6 +14,9 @@ import { supabase } from "../../supabaseClient";
 import BlockFlow from "./BlockFlow";
 import { ReactFlowProvider } from "reactflow";
 import ChatLog from "./shared/ChatLog";
+import SharedBlockFlow from "./shared/SharedBlockFlow";
+import CreateSharedBlockDrawer from "../whiteboard/shared/CreateSharedBlockDrawer";
+import SharedBlockCard from "./shared/SharedBlockCard";
 
 const Whiteboard = () => {
   const location = useLocation();
@@ -41,7 +44,7 @@ const Whiteboard = () => {
     useState(false);
   const [showSharedInstructionDrawer, setShowSharedInstructionDrawer] =
     useState(false);
-  const [userRole, setUserRole] = useState("Viewer");
+  const [userRole, setUserRole] = useState(null); // no default Viewer
 
   const containerRef = useRef(null);
 
@@ -155,37 +158,73 @@ const Whiteboard = () => {
   const fetchBlocks = async () => {
     setLoading(true);
 
-    // Step 1: Fetch blocks
-    const { data, error } = await supabase
-      .from("space_block_table")
+    const table =
+      spaceType === "Shared" ? "shared_space_block" : "space_block_table";
+
+    // Fetch block data
+    const { data: blocksData, error: blocksError } = await supabase
+      .from(table)
       .select("*")
       .eq("space_id", spaceId);
 
-    if (error) {
-      console.error("❌ Failed to fetch blocks:", error.message);
+    if (blocksError) {
+      console.error(`❌ Failed to fetch from ${table}:`, blocksError.message);
+      toast.error(`Failed to load blocks`);
+      setLoading(false);
       return;
     }
 
-    // Step 2: Set block positions
-    const CARD_WIDTH = 288;
-    const CARD_HEIGHT = 200;
-    const GAP_X = 40; // ⬅️ horizontal gap between cards
-    const GAP_Y = 120; // ⬅️ vertical gap between cards
-    const CARDS_PER_ROW = 5;
-    const OFFSET_X = 10;
-    const OFFSET_Y = 10;
+    if (!blocksData || blocksData.length === 0) {
+      console.log("ℹ️ No blocks found.");
+      setBlocks([]);
+      setTotalGasUsed("0.000000");
+      setLoading(false);
+      return;
+    }
 
-    const positionedBlocks = data.map((block, idx) => ({
-      ...block,
-      x: OFFSET_X + (idx % CARDS_PER_ROW) * (CARD_WIDTH + GAP_X),
-      y: OFFSET_Y + Math.floor(idx / CARDS_PER_ROW) * (CARD_HEIGHT + GAP_Y),
-    }));
+    // Unique user IDs
+    const userIds = Array.from(
+      new Set(blocksData.map((b) => b.user_id))
+    ).filter(Boolean);
+    console.log(
+      "👉 typeof userIds:",
+      typeof userIds,
+      "isArray:",
+      Array.isArray(userIds),
+      userIds
+    );
 
-    setBlocks(positionedBlocks); // ✅ Add this line
+    // Fetch profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, avatarUrl, firstname, lastname, designation")
+      .in("id", userIds);
 
-    // ✅ Step 3: Calculate total gas
-    const totalGas = parseFloat(
-      data.reduce((sum, block) => sum + Number(block.gas), 0).toFixed(6)
+    if (profilesError) {
+      console.error("❌ Failed to fetch profiles:", profilesError.message);
+      toast.error("Failed to load user profiles");
+    }
+
+    console.log("📦 profilesData:", profilesData);
+
+    // Attach profile + compute positions
+    const positionedBlocks = blocksData.map((block, idx) => {
+      const profile = profilesData?.find((p) => p.id === block.user_id);
+
+      return {
+        ...block,
+        x: 10 + (idx % 5) * (spaceType === "Shared" ? 330 : 328),
+        y: 10 + Math.floor(idx / 5) * (spaceType === "Shared" ? 410 : 340),
+        profile,
+      };
+    });
+
+    setBlocks(positionedBlocks);
+
+    // Total gas calculation
+    const totalGas = blocksData.reduce(
+      (sum, block) => sum + Number(block.gas || 0),
+      0
     );
     setTotalGasUsed(totalGas.toFixed(6));
 
@@ -193,12 +232,10 @@ const Whiteboard = () => {
   };
 
   useEffect(() => {
-    if (!spaceId) {
-      navigate("/playground");
-    } else {
+    if (spaceId && spaceType) {
       fetchBlocks();
     }
-  }, [spaceId]);
+  }, [spaceId, spaceType]);
 
   // Lock scroll when a drawer is open
   useEffect(() => {
@@ -276,6 +313,8 @@ const Whiteboard = () => {
 
     // Optionally store user role for EditSpace
     setUserRole(data.role);
+    setUserRole(data.role);
+    console.log("✅ Membership role set to:", data.role);
   };
   useEffect(() => {
     if (spaceId && spaceType === "Shared") {
@@ -336,31 +375,57 @@ const Whiteboard = () => {
       </svg>
       {/* Render Block Cards */}
       {viewMode === "cards" ? (
-        blocks.map((block) => (
-          <BlockCard
-            key={block.id}
-            id={block.id}
-            sr={block.block_sr}
-            x={block.x}
-            y={block.y}
-            updatePosition={updatePosition}
-            blocks={blocks}
-            title={block.block_title}
-            description={block.block_description}
-            hash={block.hash}
-            previousHash={block.previous_hash}
-            hue_color={block.hue_color}
-            gas={Number(block.gas).toFixed(6)}
-            data={block.block_files?.[0]?.name || "No file attached"}
-            timestamp={block.timestamp}
-          />
-        ))
+        blocks.map((block) =>
+          spaceType === "Shared" ? (
+            <SharedBlockCard
+              key={block.id}
+              id={block.id}
+              sr={block.block_sr}
+              x={block.x}
+              y={block.y}
+              updatePosition={updatePosition}
+              blocks={blocks}
+              title={block.block_title}
+              description={block.block_desp}
+              hash={block.hash}
+              previousHash={block.previous_hash}
+              hue_color={block.hue_color}
+              gas={Number(block.gas).toFixed(6)}
+              data={block.block_file}
+              timestamp={block.created_at}
+              userRole={block.role || null}
+              userName={
+                block.profile
+                  ? `${block.profile.firstname} ${block.profile.lastname}`
+                  : "Anonymous"
+              }
+              userAvatar={block.profile ? block.profile.avatarUrl : null}
+              userDesignation={block.profile ? block.profile.designation : ""}
+            />
+          ) : (
+            <BlockCard
+              key={block.id}
+              id={block.id}
+              sr={block.block_sr}
+              x={block.x}
+              y={block.y}
+              updatePosition={updatePosition}
+              blocks={blocks}
+              title={block.block_title}
+              description={block.block_description}
+              hash={block.hash}
+              previousHash={block.previous_hash}
+              hue_color={block.hue_color}
+              gas={Number(block.gas).toFixed(6)}
+              data={block.block_files?.[0]?.name || "No file attached"}
+              timestamp={block.timestamp}
+            />
+          )
+        )
       ) : (
-        <div className="w-screen h-[calc(100vh-64px)] relative z-10">
-          <ReactFlowProvider>
-            <BlockFlow blocks={blocks} setBlocks={setBlocks} />
-          </ReactFlowProvider>
-        </div>
+        <ReactFlowProvider>
+          <BlockFlow blocks={blocks} setBlocks={setBlocks} />
+        </ReactFlowProvider>
       )}
 
       <div className="relative w-full max-w-lg mx-auto">
@@ -691,7 +756,7 @@ const Whiteboard = () => {
                   type="button"
                   onClick={() =>
                     setActivePanel((prev) =>
-                      prev === "create" ? null : "create"
+                      prev === "shared-create" ? null : "shared-create"
                     )
                   }
                   className={`inline-flex items-center justify-center w-10 h-10 font-medium ${
@@ -716,7 +781,7 @@ const Whiteboard = () => {
                       d="M9 1v16M1 9h16"
                     />
                   </svg>
-                  <span className="sr-only">Create</span>
+                  <span className="sr-only">Create Shared Block</span>
                 </button>
               </div>
               <div
@@ -724,7 +789,7 @@ const Whiteboard = () => {
                 role="tooltip"
                 className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700"
               >
-                Create New Block
+                Create New Shared Block
                 <div className="tooltip-arrow" data-popper-arrow></div>
               </div>
 
@@ -783,26 +848,25 @@ const Whiteboard = () => {
                 className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
               >
                 {viewMode === "cards" ? (
-                  // Cards → Flow view (show flow icon)
                   <svg
                     className="w-6 h-6 text-gray-800 dark:text-white"
                     aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
+                    {/* Flow icon */}
                     <path d="M8 3a3 3 0 0 0-1 5.83v6.34a3.001 3.001 0 1 0 2 0V15a2 2 0 0 1 2-2h1a5.002 5.002 0 0 0 4.927-4.146A3.001 3.001 0 0 0 16 3a3 3 0 0 0-1.105 5.79A3.001 3.001 0 0 1 12 11h-1c-.729 0-1.412.195-2 .535V8.83A3.001 3.001 0 0 0 8 3Z" />
                   </svg>
                 ) : (
-                  // Flow → Cards view (show card icon)
                   <svg
                     className="w-6 h-6 text-gray-800 dark:text-white"
+                    aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
+                    {/* Cards icon */}
                     <path
                       fillRule="evenodd"
                       d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.414A2 2 0 0 0 20.414 6L18 3.586A2 2 0 0 0 16.586 3H5Zm10 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7V5h8v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1Z"
@@ -817,7 +881,9 @@ const Whiteboard = () => {
                 role="tooltip"
                 className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700"
               >
-                {viewMode === "cards" ? "Flow View" : "Cards View"}
+                {viewMode === "cards"
+                  ? "Switch to Flow View"
+                  : "Switch to Cards View"}
                 <div className="tooltip-arrow" data-popper-arrow></div>
               </div>
 
@@ -954,6 +1020,16 @@ const Whiteboard = () => {
         toggleGas={handleToggleGas}
         togglePow={handleToggleGames}
         userRole={userRole} // dynamic role!
+      />
+      <CreateSharedBlockDrawer
+        isOpen={activePanel === "shared-create"}
+        onClose={() => setActivePanel(null)}
+        spaceId={spaceId}
+        onSuccess={fetchBlocks}
+        requirePoW={requirePoW}
+        gasUsed={gasUsed}
+        powGameName={powGameName}
+        userRole={userRole}
       />
     </div>
   );

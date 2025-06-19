@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { supabase } from "../../supabaseClient";
 import { toast } from "react-toastify";
+import { registerLog } from "../../utils/logUtils";
 
 const JoinSpaceModal = ({ isOpen, onClose }) => {
   const [inviteInput, setInviteInput] = useState("");
@@ -40,6 +41,15 @@ const JoinSpaceModal = ({ isOpen, onClose }) => {
       console.error("Insert member error:", insertError);
       return false;
     }
+
+    await registerLog({
+      space_id: spaceId,
+      user_id: userId,
+      username,
+      action: "USER_JOINED",
+      description: `${username} joined the space as ${role}`,
+    });
+    console.log("✅ USER_JOINED log inserted via utility");
 
     console.log("✅ Inserted member:", insertResult);
     return true;

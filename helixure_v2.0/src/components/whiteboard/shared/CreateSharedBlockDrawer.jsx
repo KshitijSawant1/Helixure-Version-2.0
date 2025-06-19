@@ -1,14 +1,13 @@
-// 🧱 Imports
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { supabase } from "../../supabaseClient";
-import hashBlock from "../../utils/hashBlock";
-import getBlockColor from "../../utils/getBlockColor";
-import PoWGameModal from "./PoWGameModal";
-import "./InstructionModal.css";
+import { supabase } from "../../../supabaseClient";
+import hashBlock from "../../../utils/hashBlock";
+import getBlockColor from "../../../utils/getBlockColor";
+import PoWGameModal from "../PoWGameModal";
+import "../InstructionModal.css";
+import { registerLog } from "../../../utils/logUtils";
 
-// 🧠 Component
-const CreateBlockDrawer = ({
+const CreateSharedBlockDrawer = ({
   isOpen,
   onClose,
   spaceId,
@@ -16,17 +15,15 @@ const CreateBlockDrawer = ({
   requirePoW,
   gasUsed,
   powGameName,
+  userRole,
 }) => {
-  // 🧾 State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPoWModal, setShowPoWModal] = useState(false);
 
-  // 🛠 Block creation logic
   const createBlock = async (gasValue = 0.000028, gameName = "") => {
-    // Gas setup
     const gasForDB = requirePoW
       ? parseFloat(Number(gasValue).toFixed(6))
       : 0.000028;
@@ -38,7 +35,16 @@ const CreateBlockDrawer = ({
     if (userError || !user) throw new Error("User not found");
     const user_id = user.id;
 
-    // File upload
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("firstname, lastname, designation, avatarUrl")
+      .eq("id", user_id)
+      .maybeSingle();
+
+    if (profileError || !profileData) {
+      throw new Error("Failed to fetch profile data");
+    }
+
     let fileURL = null;
     if (file) {
       const path = `blocks/${Date.now()}-${file.name}`;
@@ -50,9 +56,8 @@ const CreateBlockDrawer = ({
         .data.publicUrl;
     }
 
-    // Previous block
     const { data: latestBlock } = await supabase
-      .from("space_block_table")
+      .from("shared_space_block")
       .select("block_sr, hash")
       .eq("space_id", spaceId)
       .order("block_sr", { ascending: false })
@@ -62,18 +67,17 @@ const CreateBlockDrawer = ({
     const nextBlockSr = (latestBlock?.block_sr || 0) + 1;
     const previousHash = latestBlock
       ? latestBlock.hash
-      : "00000000000000000000000000000000000000000"; // ✅ ← Update made here
+      : "00000000000000000000000000000000000000000";
 
     const hueColor = getBlockColor();
 
-    // Block data
     const blockData = {
       user_id,
       space_id: spaceId,
       block_sr: nextBlockSr,
       block_title: title,
-      block_description: description,
-      block_files: fileURL
+      block_desp: description,
+      block_file: fileURL
         ? [{ name: file.name, url: fileURL }]
         : [{ name: "default.txt", url: "https://example.com/default.txt" }],
       previous_hash: previousHash,
@@ -81,37 +85,42 @@ const CreateBlockDrawer = ({
       pow_solved: requirePoW,
       gas: gasForDB,
       pow_game: requirePoW ? gameName : "",
-      timestamp: new Date().toISOString().replace("Z", ""),
+      created_at: new Date().toISOString().replace("Z", ""),
+      role: userRole || "Viewer",
+      user_name: `${profileData.firstname} ${profileData.lastname}`,
+      user_designation: profileData.designation,
+      user_avatar: String(profileData.avatarUrl || "default-avatar-url.png"),
     };
 
-    // Hashing & Insertion
     const generatedHash = hashBlock(blockData);
+    console.log("📝 Block Data being inserted:", blockData);
+
     const { error: insertError } = await supabase
-      .from("space_block_table")
+      .from("shared_space_block")
       .insert({ ...blockData, hash: generatedHash });
+
     if (insertError) throw new Error(insertError.message || "Insert failed");
 
-    // ✅ Update total gas after new block
-    await updateTotalGasAfterNewBlock({
-      user_id,
+    // Register BLOCK_CREATED log
+    await registerLog({
       space_id: spaceId,
-      newBlockGas: gasForDB,
+      user_id,
+      username: `${profileData.firstname} ${profileData.lastname}`,
+      action: "BLOCK_CREATED",
+      description: `Block "${title}" created`,
     });
 
-    toast.success("Block created!");
+    await updateTotalGasAfterNewBlock(spaceId, gasForDB);
+
+    toast.success("Shared Block created!");
     onSuccess?.();
     resetForm();
   };
 
-  // ✅ Function: Recalculate and update total_gas for a given user + space
-  const updateTotalGasAfterNewBlock = async ({
-    user_id,
-    space_id,
-    newBlockGas,
-  }) => {
+  const updateTotalGasAfterNewBlock = async (space_id, newBlockGas) => {
     try {
       const { data: blocks, error } = await supabase
-        .from("space_block_table")
+        .from("shared_space_block")
         .select("gas")
         .eq("space_id", space_id);
 
@@ -126,24 +135,17 @@ const CreateBlockDrawer = ({
       );
 
       const { error: updateError } = await supabase
-        .from("playground")
+        .from("shared_playground")
         .update({ total_gas: updatedGas })
-        .match({ id: space_id, user_id });
+        .match({ id: space_id });
 
-      console.log("➡️ Updating total_gas in playground", {
-        space_id,
-        updatedGas,
-      });
       if (updateError) {
         console.error("❌ Failed to update total_gas:", updateError.message);
       } else {
         console.log("✅ total_gas updated to:", updatedGas);
       }
     } catch (err) {
-      console.error(
-        "❌ Exception in updateTotalGasAfterNewBlock:",
-        err.message
-      );
+      console.error("❌ Exception updating total gas:", err.message);
     }
   };
 
@@ -161,9 +163,9 @@ const CreateBlockDrawer = ({
 
     try {
       setLoading(true);
-      await createBlock(); // Without PoW
+      await createBlock();
     } catch (err) {
-      toast.error(err.message || "Failed");
+      toast.error(err.message || "Failed to create block");
     } finally {
       setLoading(false);
     }
@@ -178,11 +180,11 @@ const CreateBlockDrawer = ({
 
   return (
     isOpen && (
-      <div className=" fixed inset-0 z-[9999] inset-0 z-40 bg-black/30 backdrop-blur-sm flex justify-end">
+      <div className="fixed  inset-0 z-[9999] inset-0 z-40 bg-black/30 backdrop-blur-sm flex justify-end">
         <div className="w-[24rem] h-screen bg-white/90 dark:bg-gray-900/90 shadow-lg overflow-y-auto p-6 space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-700 dark:text-gray-100">
-              ADD BLOCK
+              ADD SHARED BLOCK
             </h2>
             <button
               onClick={onClose}
@@ -229,50 +231,6 @@ const CreateBlockDrawer = ({
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="dropzone-file"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Attach Files
-              </label>
-              <div className="flex items-center justify-center w-full">
-                <label
-                  htmlFor="dropzone-file"
-                  className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600"
-                >
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg
-                      className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400"
-                      fill="none"
-                      viewBox="0 0 20 16"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5A5.5 5.5 0 0 0 5.207 5.021 4 4 0 0 0 5 13h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                      />
-                    </svg>
-                    <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="font-semibold">Click to upload</span> or
-                      drag & drop
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      SVG, PNG, JPG or GIF (max 800x400px)
-                    </p>
-                  </div>
-                  <input
-                    id="dropzone-file"
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => setFile(e.target.files[0])}
-                  />
-                </label>
-              </div>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -280,26 +238,19 @@ const CreateBlockDrawer = ({
                 loading ? "bg-blue-300" : "bg-blue-700 hover:bg-blue-800"
               } font-medium rounded-lg text-sm px-5 py-2.5`}
             >
-              {loading ? "Creating..." : "Create Block"}
+              {loading ? "Creating..." : "Create Shared Block"}
             </button>
           </form>
         </div>
+
         {showPoWModal && (
           <PoWGameModal
             isOpen={showPoWModal}
             onClose={() => setShowPoWModal(false)}
             onSuccess={(gas, gameName) => {
-              console.log(
-                "✅ PoW completed with gas:",
-                gas,
-                "and game:",
-                gameName
-              );
-
-              const numericGas = Number(gas); // ✅ Ensure gas is number
               setShowPoWModal(false);
               setLoading(true);
-              createBlock(numericGas, gameName)
+              createBlock(Number(gas), gameName)
                 .then(() => setLoading(false))
                 .catch((err) => {
                   toast.error(err.message || "Block creation failed");
@@ -313,4 +264,4 @@ const CreateBlockDrawer = ({
   );
 };
 
-export default CreateBlockDrawer;
+export default CreateSharedBlockDrawer;

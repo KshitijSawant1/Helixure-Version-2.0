@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../../supabaseClient";
 import { toast } from "react-toastify";
+import { registerLog } from "../../../utils/logUtils";
 
 const SpaceControlPanel = ({ spaceId, userRole }) => {
   const [members, setMembers] = useState([]);
@@ -35,39 +36,99 @@ const SpaceControlPanel = ({ spaceId, userRole }) => {
     setLoading(false);
   };
 
-  const updateRole = async (memberId, newRole) => {
-    const { error } = await supabase
-      .from("shared_playground_members")
-      .update({ role: newRole })
-      .eq("id", memberId);
+const updateRole = async (memberId, newRole) => {
+  const { data: member, error: fetchError } = await supabase
+    .from("shared_playground_members")
+    .select("*")
+    .eq("id", memberId)
+    .single();
 
-    if (error) {
-      console.error("Update role error:", error);
-      toast.error("Failed to update role");
-      return;
-    }
+  if (fetchError || !member) {
+    toast.error("Failed to fetch member info");
+    console.error("Fetch member error:", fetchError);
+    return;
+  }
 
-    toast.success("Role updated successfully");
-    fetchMembers();
-  };
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
 
-  const removeMember = async (memberId) => {
-    if (!window.confirm("Are you sure you want to remove this member?")) return;
+  const actorName = `${actor.user_metadata?.firstname || ""} ${
+    actor.user_metadata?.lastname || ""
+  }`.trim();
 
-    const { error } = await supabase
-      .from("shared_playground_members")
-      .delete()
-      .eq("id", memberId);
+  const { error } = await supabase
+    .from("shared_playground_members")
+    .update({ role: newRole })
+    .eq("id", memberId);
 
-    if (error) {
-      console.error("Remove member error:", error);
-      toast.error("Failed to remove member");
-      return;
-    }
+  if (error) {
+    console.error("Update role error:", error);
+    toast.error("Failed to update role");
+    return;
+  }
 
-    toast.success("Member removed successfully");
-    fetchMembers();
-  };
+  toast.success("Role updated successfully");
+
+  // Log with actor's info
+  await registerLog({
+    space_id: spaceId,
+    user_id: actor.id,
+    username: actorName,
+    action: newRole === "Editor" ? "ROLE_PROMOTED" : "ROLE_DEMOTED",
+    description: `${actorName} ${newRole === "Editor" ? "promoted" : "demoted"} ${member.username} to ${newRole}`,
+  });
+
+  fetchMembers();
+};
+
+const removeMember = async (memberId) => {
+  if (!window.confirm("Are you sure you want to remove this member?")) return;
+
+  const { data: member, error: fetchError } = await supabase
+    .from("shared_playground_members")
+    .select("*")
+    .eq("id", memberId)
+    .single();
+
+  if (fetchError || !member) {
+    toast.error("Failed to fetch member info");
+    console.error("Fetch member error:", fetchError);
+    return;
+  }
+
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+
+  const actorName = `${actor.user_metadata?.firstname || ""} ${
+    actor.user_metadata?.lastname || ""
+  }`.trim();
+
+  const { error } = await supabase
+    .from("shared_playground_members")
+    .delete()
+    .eq("id", memberId);
+
+  if (error) {
+    console.error("Remove member error:", error);
+    toast.error("Failed to remove member");
+    return;
+  }
+
+  toast.success("Member removed successfully");
+
+  await registerLog({
+    space_id: spaceId,
+    user_id: actor.id,
+    username: actorName,
+    action: "USER_REMOVED",
+    description: `${actorName} removed ${member.username} from the space`,
+  });
+
+  fetchMembers();
+};
+
 
   if (userRole !== "Owner") {
     return (
