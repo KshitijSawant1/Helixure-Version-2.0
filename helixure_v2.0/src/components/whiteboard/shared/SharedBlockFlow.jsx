@@ -1,12 +1,18 @@
-import React, { useMemo } from "react";
-import ReactFlow, { Background, Controls, MiniMap } from "reactflow";
+import React, { useMemo, useEffect, useState } from "react";
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  useReactFlow,
+} from "reactflow";
 import "reactflow/dist/style.css";
 import SharedCustomBlockNode from "./SharedCustomBlockNode";
-
-const SharedBlockFlow = ({ blocks }) => {
+const SharedBlockFlow = ({ blocks, supplementaryLinks = [] }) => {
+  const [linkFilter, setLinkFilter] = useState("all"); // all, normal, supplementary
   const CARD_WIDTH = 320;
   const CARD_HEIGHT = 220;
   const CARDS_PER_ROW = 5;
+  const { fitView } = useReactFlow();
 
   // 🧠 Build nodes
   const nodes = useMemo(() => {
@@ -14,14 +20,23 @@ const SharedBlockFlow = ({ blocks }) => {
       id: block.id.toString(),
       type: "sharedCustom",
       position: {
-        x: block.x ?? (index % CARDS_PER_ROW) * CARD_WIDTH,
-        y: block.y ?? Math.floor(index / CARDS_PER_ROW) * CARD_HEIGHT,
+        x:
+          block.x !== undefined
+            ? block.x
+            : (index % CARDS_PER_ROW) * CARD_WIDTH * 1.2, // adjustable multiplier
+        y:
+          block.y !== undefined
+            ? block.y
+            : Math.floor(index / CARDS_PER_ROW) * CARD_HEIGHT * 2, // adjustable multiplier
       },
       data: {
         id: block.id,
         sr: block.block_sr,
         title: block.block_title,
-        description: block.block_description,
+        description:
+          block.block_description ||
+          block.block_desp ||
+          "No description provided.",
         hash: block.hash,
         previousHash: block.previous_hash,
         gas: block.gas,
@@ -38,30 +53,57 @@ const SharedBlockFlow = ({ blocks }) => {
 
   // 🔗 Build edges
   const edges = useMemo(() => {
-    return blocks
+    const baseEdges = blocks
       .map((block) => {
         const parent = blocks.find((b) => b.hash === block.previous_hash);
         if (!parent) return null;
-
         return {
           id: `e${parent.id}-${block.id}`,
           source: parent.id.toString(),
-          sourceHandle: "b",
           target: block.id.toString(),
+          sourceHandle: "b",
           targetHandle: "a",
           type: "smoothstep",
           animated: true,
           markerEnd: { type: "arrowclosed" },
-          style: { stroke: "#3B82F6", strokeWidth: 2 },
+          style: { stroke: "#1E429F", strokeWidth: 3, strokeDasharray: "6 4" },
         };
       })
       .filter(Boolean);
-  }, [blocks]);
+    const extraEdges = supplementaryLinks
+      .filter((link) => link.source_block_id && link.target_block_id)
+      .map((link, index) => ({
+        id: `s${link.source_block_id}-${link.target_block_id}-${
+          link.id || index
+        }`, // append DB id or fallback to index
+        source: link.source_block_id.toString(),
+        target: link.target_block_id.toString(),
+        sourceHandle: "right",
+        targetHandle: "left",
+        type: "smoothstep",
+        animated: true,
+        markerEnd: { type: "arrowclosed" },
+        style: {
+          stroke: "#1C64F2",
+          strokeWidth: 3,
+          strokeDasharray: "none",
+        },
+      }));
+
+    if (linkFilter === "normal") return baseEdges;
+    if (linkFilter === "supplementary") return extraEdges;
+    return [...baseEdges, ...extraEdges];
+  }, [blocks, supplementaryLinks, linkFilter]);
 
   const nodeTypes = useMemo(
     () => ({ sharedCustom: SharedCustomBlockNode }),
     []
   );
+
+  // Call fitView ONCE (optional, you can remove this useEffect if not needed)
+  useEffect(() => {
+    fitView();
+  }, [fitView]);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
@@ -69,7 +111,7 @@ const SharedBlockFlow = ({ blocks }) => {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        fitView
+        // Removed fitView prop
         panOnDrag
         zoomOnScroll
         zoomOnPinch
@@ -90,6 +132,53 @@ const SharedBlockFlow = ({ blocks }) => {
             borderRadius: "2px",
           }}
         />
+        <div
+          style={{
+            position: "absolute",
+            top: 170, // position below the MiniMap
+            right: 10, // align right with MiniMap
+            zIndex: 20,
+          }}
+        >
+          <div
+            className="inline-flex rounded-md shadow-sm bg-white"
+            role="group"
+          >
+            <button
+              type="button"
+              onClick={() => setLinkFilter("all")}
+              className={`px-4 py-2 text-sm font-medium border border-gray-900 ${
+                linkFilter === "all"
+                  ? "bg-gray-900 text-white"
+                  : "bg-transparent text-gray-900 hover:bg-gray-900 hover:text-white"
+              } rounded-s-lg focus:z-10 focus:ring-2 focus:ring-gray-500`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setLinkFilter("normal")}
+              className={`px-4 py-2 text-sm font-medium border-t border-b border-gray-900 ${
+                linkFilter === "normal"
+                  ? "bg-gray-900 text-white"
+                  : "bg-transparent text-gray-900 hover:bg-gray-900 hover:text-white"
+              } focus:z-10 focus:ring-2 focus:ring-gray-500`}
+            >
+              Chain
+            </button>
+            <button
+              type="button"
+              onClick={() => setLinkFilter("supplementary")}
+              className={`px-4 py-2 text-sm font-medium border border-gray-900 ${
+                linkFilter === "supplementary"
+                  ? "bg-gray-900 text-white"
+                  : "bg-transparent text-gray-900 hover:bg-gray-900 hover:text-white"
+              } rounded-e-lg focus:z-10 focus:ring-2 focus:ring-gray-500`}
+            >
+              Custom
+            </button>
+          </div>
+        </div>
       </ReactFlow>
     </div>
   );

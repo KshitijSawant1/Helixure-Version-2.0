@@ -17,6 +17,7 @@ import ChatLog from "./shared/ChatLog";
 import SharedBlockFlow from "./shared/SharedBlockFlow";
 import CreateSharedBlockDrawer from "../whiteboard/shared/CreateSharedBlockDrawer";
 import SharedBlockCard from "./shared/SharedBlockCard";
+import CreateSupplementaryLinkDrawer from "./shared/CreateSupplementaryLinkDrawer";
 
 const Whiteboard = () => {
   const location = useLocation();
@@ -45,6 +46,8 @@ const Whiteboard = () => {
   const [showSharedInstructionDrawer, setShowSharedInstructionDrawer] =
     useState(false);
   const [userRole, setUserRole] = useState(null); // no default Viewer
+  const [supplementaryLinks, setSupplementaryLinks] = useState([]);
+
 
   const containerRef = useRef(null);
 
@@ -211,12 +214,21 @@ const Whiteboard = () => {
     const positionedBlocks = blocksData.map((block, idx) => {
       const profile = profilesData?.find((p) => p.id === block.user_id);
 
-      return {
-        ...block,
-        x: 10 + (idx % 5) * (spaceType === "Shared" ? 330 : 328),
-        y: 10 + Math.floor(idx / 5) * (spaceType === "Shared" ? 410 : 340),
-        profile,
-      };
+      if (viewMode === "cards") {
+        return {
+          ...block,
+          x: 10 + (idx % 5) * (spaceType === "Shared" ? 330 : 328),
+          y: 10 + Math.floor(idx / 5) * (spaceType === "Shared" ? 410 : 340),
+          profile,
+        };
+      } else {
+        return {
+          ...block,
+          x: undefined,
+          y: undefined,
+          profile,
+        };
+      }
     });
 
     setBlocks(positionedBlocks);
@@ -231,9 +243,27 @@ const Whiteboard = () => {
     setLoading(false);
   };
 
+  const fetchSupplementaryLinks = async () => {
+    if (!spaceId) return;
+    const { data, error } = await supabase
+      .from("shared_playground_links")
+      .select("*")
+      .eq("space_id", spaceId);
+
+    if (error) {
+      console.error("❌ Failed to fetch supplementary links:", error.message);
+      toast.error("Failed to load links");
+      return;
+    }
+
+    setSupplementaryLinks(data || []);
+  };
   useEffect(() => {
     if (spaceId && spaceType) {
       fetchBlocks();
+      if (spaceType === "Shared") {
+        fetchSupplementaryLinks(); // fetch links only for shared space
+      }
     }
   }, [spaceId, spaceType]);
 
@@ -424,7 +454,14 @@ const Whiteboard = () => {
         )
       ) : (
         <ReactFlowProvider>
-          <BlockFlow blocks={blocks} setBlocks={setBlocks} />
+          {spaceType === "Shared" ? (
+            <SharedBlockFlow
+              blocks={blocks}
+              supplementaryLinks={supplementaryLinks}
+            />
+          ) : (
+            <BlockFlow blocks={blocks} setBlocks={setBlocks} />
+          )}
         </ReactFlowProvider>
       )}
 
@@ -798,9 +835,7 @@ const Whiteboard = () => {
                   data-tooltip-target="tooltip-shared-link"
                   type="button"
                   onClick={() =>
-                    setActivePanel((prev) =>
-                      prev === "create" ? null : "create"
-                    )
+                    setActivePanel((prev) => (prev === "link" ? null : "link"))
                   }
                   className={`inline-flex items-center justify-center w-10 h-10 font-medium ${
                     userRole === "Viewer"
@@ -997,6 +1032,7 @@ const Whiteboard = () => {
         spaceId={spaceId}
         showGas={showGas}
         toggleGas={handleToggleGas}
+        supplementaryLinks={supplementaryLinks}
       />
       <ChatLog
         isOpen={activePanel === "shared-chat"}
@@ -1030,6 +1066,14 @@ const Whiteboard = () => {
         gasUsed={gasUsed}
         powGameName={powGameName}
         userRole={userRole}
+      />
+      <CreateSupplementaryLinkDrawer
+        isOpen={activePanel === "link"}
+        onClose={() => setActivePanel(null)}
+        spaceId={spaceId}
+        onSuccess={fetchBlocks} // You can also provide fetchSupplementaryLinks if you have it
+        blocks={blocks}
+        supplementaryLinks={supplementaryLinks} // <-- Add this!
       />
     </div>
   );

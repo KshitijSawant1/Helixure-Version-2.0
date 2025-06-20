@@ -17,10 +17,29 @@ const SharedCustomBlockNode = ({ data }) => {
         type="target"
         position="top"
         id="a"
-        style={{ background: "#10B981", width: 12, height: 12 }}
+        style={{
+          background: "#10B981",
+          width: 12,
+          height: 12,
+          borderRadius: "50%",
+        }}
+      />
+      <Handle
+        type="source"
+        position="right"
+        id="right"
+        style={{
+          background: "#F59E0B",
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          right: 7, // ⬅ ensure it's flush to the right edge
+          top: "50%", // center vertically (optional if not done)
+          transform: "translateY(-50%)", // perfect vertical centering
+        }}
       />
 
-      {/* Shared block card */}
+      {/* Shared block card view with full user attribution */}
       <SharedBlockCard
         id={data.id}
         sr={data.sr}
@@ -32,12 +51,12 @@ const SharedCustomBlockNode = ({ data }) => {
         data={data.data}
         timestamp={data.timestamp}
         hue_color={data.hue_color}
-        blocks={[]} // Not used in flow mode but required by card
         isFlowMode={true}
-        userName={data.userName}
-        userAvatar={data.userAvatar}
-        userRole={data.userRole}
-        userDesignation={data.userDesignation}
+        // 🧠 User Attribution (Creator of block)
+        userName={data.userName || "Anonymous"}
+        userAvatar={data.userAvatar || null}
+        userRole={data.userRole || "Viewer"}
+        userDesignation={data.userDesignation || "Member"}
       />
 
       {/* Outgoing handle */}
@@ -45,7 +64,24 @@ const SharedCustomBlockNode = ({ data }) => {
         type="source"
         position="bottom"
         id="b"
-        style={{ background: "#EF4444", width: 12, height: 12 }}
+        style={{
+          background: "#EF4444",
+          width: 12,
+          height: 12,
+          borderRadius: "50%",
+        }}
+      />
+
+      <Handle
+        type="target"
+        position="left"
+        id="left"
+        style={{
+          background: "#F59E0B",
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+        }}
       />
     </div>
   );

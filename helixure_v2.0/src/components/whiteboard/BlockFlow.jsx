@@ -6,7 +6,7 @@ import CustomBlockNode from "./CustomBlockNode";
 const BlockFlow = ({ blocks }) => {
   // 🧠 1. NODES from Supabase blocks
   const CARD_WIDTH = 320; // width of one BlockCard + margin
-  const CARD_HEIGHT = 220; // height of one BlockCard + margin
+  const CARD_HEIGHT = 250; // height of one BlockCard + margin
   const CARDS_PER_ROW = 5;
 
   const nodes = useMemo(() => {
@@ -15,8 +15,8 @@ const BlockFlow = ({ blocks }) => {
       type: "custom",
 
       position: {
-        x: block.x ?? (index % CARDS_PER_ROW) * CARD_WIDTH,
-        y: block.y ?? Math.floor(index / CARDS_PER_ROW) * CARD_HEIGHT,
+        x: (index % CARDS_PER_ROW) * CARD_WIDTH * 1.2, // apply multiplier here
+        y: Math.floor(index / CARDS_PER_ROW) * CARD_HEIGHT * 1.5, // adjust as desired
       },
       data: {
         id: block.id,

@@ -5,6 +5,7 @@ import ChatMessage from "./chatfiles/ChatMessages";
 import ChatInput from "./chatfiles/ChatInput";
 import LogDrawer from "./chatfiles/LogDrawer";
 import { registerLog } from "../../../utils/logUtils";
+import OnlineUsersPanel from "./OnlineUsersPanel";
 
 const ChatLog = ({ isOpen, onClose, spaceId }) => {
   const [activeTab, setActiveTab] = useState("chat");
@@ -155,7 +156,7 @@ const ChatLog = ({ isOpen, onClose, spaceId }) => {
     <div className="fixed z-[1000] inset-0 bg-[#f3f8ff]/90 backdrop-blur-sm flex">
       <div className="w-[26rem] h-screen bg-[#f3f8ff]/90 dark:bg-gray-900/90 shadow-lg overflow-y-auto flex flex-col">
         <ChatHeader onClose={onClose} />
-
+        <OnlineUsersPanel spaceId={spaceId} currentUser={currentUser} />
         <div className="flex justify-center pt-4">
           <div
             className="inline-flex w-3/4 border rounded-md shadow-xs"
