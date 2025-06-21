@@ -151,7 +151,7 @@ const LogDrawer = ({ isOpen, onClose, logs = [], spaceId, setLogs }) => {
         </div>
       </div>
 
-      <div className="p-4 space-y-4 max-h-[72.5vh] overflow-y-auto">
+      <div className="p-4 space-y-4 max-h-[65vh] overflow-y-auto">
         {filteredLogs.length === 0 ? (
           <div className="text-center text-gray-500">No logs to display.</div>
         ) : (

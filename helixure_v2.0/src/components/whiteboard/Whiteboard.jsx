@@ -18,6 +18,7 @@ import SharedBlockFlow from "./shared/SharedBlockFlow";
 import CreateSharedBlockDrawer from "../whiteboard/shared/CreateSharedBlockDrawer";
 import SharedBlockCard from "./shared/SharedBlockCard";
 import CreateSupplementaryLinkDrawer from "./shared/CreateSupplementaryLinkDrawer";
+import SearchSharedBlockModal from "./shared/SearchSharedBlockModal";
 
 const Whiteboard = () => {
   const location = useLocation();
@@ -47,7 +48,6 @@ const Whiteboard = () => {
     useState(false);
   const [userRole, setUserRole] = useState(null); // no default Viewer
   const [supplementaryLinks, setSupplementaryLinks] = useState([]);
-
 
   const containerRef = useRef(null);
 
@@ -416,7 +416,7 @@ const Whiteboard = () => {
               updatePosition={updatePosition}
               blocks={blocks}
               title={block.block_title}
-              description={block.block_desp}
+              description={block.block_description}
               hash={block.hash}
               previousHash={block.previous_hash}
               hue_color={block.hue_color}
@@ -756,7 +756,7 @@ const Whiteboard = () => {
               <button
                 data-tooltip-target="tooltip-shared-search"
                 type="button"
-                onClick={() => togglePanel("search")}
+                onClick={() => setActivePanel("shared-search")}
                 className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group"
               >
                 <svg
@@ -1074,6 +1074,11 @@ const Whiteboard = () => {
         onSuccess={fetchBlocks} // You can also provide fetchSupplementaryLinks if you have it
         blocks={blocks}
         supplementaryLinks={supplementaryLinks} // <-- Add this!
+      />
+      <SearchSharedBlockModal
+        isOpen={activePanel === "shared-search"}
+        onClose={() => setActivePanel(null)}
+        sharedSpaceId={spaceId}
       />
     </div>
   );

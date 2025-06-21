@@ -14,7 +14,6 @@ const SharedBlockFlow = ({ blocks, supplementaryLinks = [] }) => {
   const CARDS_PER_ROW = 5;
   const { fitView } = useReactFlow();
 
-  // 🧠 Build nodes
   const nodes = useMemo(() => {
     return blocks.map((block, index) => ({
       id: block.id.toString(),
